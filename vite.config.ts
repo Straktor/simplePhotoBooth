@@ -11,13 +11,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: { enabled: false },
-      includeAssets: ['favicon.ico', 'icons/*.png'],
+      includeAssets: ['icon.svg', 'icons/*.png'],
       manifest: {
         name: 'Simple Photo Booth',
         short_name: 'PhotoBooth',
         description: 'A fun PWA photo booth with countdown, themes, and save-to-device.',
-        theme_color: '#1a1a2e',
-        background_color: '#1a1a2e',
+        theme_color: '#09090f',
+        background_color: '#09090f',
         display: 'standalone',
         orientation: 'portrait-primary',
         scope: '/simplePhotoBooth/',
