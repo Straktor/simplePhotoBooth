@@ -28,7 +28,11 @@ function onRetake() {
 
 <template>
   <div class="booth">
-    <div class="camera-container">
+    <div
+      class="camera-container"
+      :class="{ clickable: isCameraReady && !isRunning }"
+      @click="isCameraReady && !isRunning && onTakePhoto()"
+    >
       <video
         ref="videoRef"
         class="camera-feed"
@@ -102,6 +106,15 @@ function onRetake() {
   justify-content: center;
   min-height: 50dvh;
   overflow: hidden;
+}
+
+.camera-container.clickable {
+  cursor: pointer;
+}
+
+.camera-container.clickable:active .camera-feed {
+  filter: brightness(1.3);
+  transition: filter 0.1s ease;
 }
 
 .camera-feed {
