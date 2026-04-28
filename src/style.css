@@ -1,15 +1,16 @@
 :root {
   --color-primary: #6c63ff;
   --color-accent: #ff6584;
-  --color-bg: #1a1a2e;
-  --color-surface: #16213e;
-  --color-surface-2: #0f3460;
-  --color-text: #e0e0e0;
-  --color-text-muted: #a0a0b0;
+  --color-bg: #09090f;
+  --color-surface: rgba(255,255,255,0.06);
+  --color-surface-solid: #13131f;
+  --color-border: rgba(255,255,255,0.08);
+  --color-text: #f0f0f5;
+  --color-text-muted: #7070a0;
   --font-family: system-ui, -apple-system, sans-serif;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --transition: 0.2s ease;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: 0.18s ease;
   --bg-image: none;
 }
 
@@ -19,13 +20,18 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  height: 100%;
+}
+
+body {
   font-family: var(--font-family);
   background-color: var(--color-bg);
   color: var(--color-text);
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
 }
 
 a {
@@ -38,23 +44,21 @@ button {
   font-family: inherit;
   font-size: 1rem;
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 1.2rem;
+  background: none;
   transition: opacity var(--transition), transform var(--transition);
 }
 
 button:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
 }
 
-input,
-select {
+input, select {
   font-family: inherit;
   font-size: 1rem;
 }

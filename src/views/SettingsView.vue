@@ -15,11 +15,9 @@ function onBgImageChange(e: Event) {
   bgImageWarning.value = ''
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-
   if (file.size > 2 * 1024 * 1024) {
-    bgImageWarning.value = 'Image is large (>2MB). May exceed storage limits on some browsers.'
+    bgImageWarning.value = 'Large image — may exceed browser storage limits.'
   }
-
   const reader = new FileReader()
   reader.onload = () => update({ backgroundImage: reader.result as string })
   reader.readAsDataURL(file)
@@ -31,256 +29,242 @@ function clearBgImage() {
 }
 
 const countdownOptions = [3, 5, 10] as const
-const fontOptions = [
-  { value: 'system', label: 'System (default)' },
-  { value: 'mono', label: 'Monospace' },
-  { value: 'serif', label: 'Serif' },
-] as const
-
 </script>
 
 <template>
   <div class="settings-page">
     <h1 class="page-title">Settings</h1>
 
-    <section class="section">
-      <h2 class="section-title">Theme Colors</h2>
-      <div class="color-grid">
-        <label class="color-item">
-          <span>Primary</span>
-          <input type="color" :value="settings.primaryColor" @input="onColorInput('primaryColor', ($event.target as HTMLInputElement).value)" />
-        </label>
-        <label class="color-item">
-          <span>Accent</span>
-          <input type="color" :value="settings.accentColor" @input="onColorInput('accentColor', ($event.target as HTMLInputElement).value)" />
-        </label>
-        <label class="color-item">
-          <span>Background</span>
-          <input type="color" :value="settings.backgroundColor" @input="onColorInput('backgroundColor', ($event.target as HTMLInputElement).value)" />
-        </label>
+    <!-- Theme -->
+    <p class="group-label">Theme</p>
+    <div class="group">
+      <div class="row">
+        <span class="row-label">Primary color</span>
+        <input type="color" :value="settings.primaryColor" @input="onColorInput('primaryColor', ($event.target as HTMLInputElement).value)" class="color-swatch" />
       </div>
-    </section>
-
-    <section class="section">
-      <h2 class="section-title">Background Image</h2>
-      <div v-if="settings.backgroundImage" class="bg-preview-row">
-        <img :src="settings.backgroundImage" alt="Background preview" class="bg-preview" />
-        <button class="btn-danger-sm" @click="clearBgImage">Remove</button>
+      <div class="divider" />
+      <div class="row">
+        <span class="row-label">Accent color</span>
+        <input type="color" :value="settings.accentColor" @input="onColorInput('accentColor', ($event.target as HTMLInputElement).value)" class="color-swatch" />
       </div>
-      <label class="file-label" v-else>
-        <input type="file" accept="image/*" @change="onBgImageChange" class="file-input" />
-        Choose Image
-      </label>
-      <p v-if="bgImageWarning" class="warning">⚠️ {{ bgImageWarning }}</p>
-      <p class="hint">Displayed as the app background. Stored in local storage (~5MB limit).</p>
-    </section>
+      <div class="divider" />
+      <div class="row">
+        <span class="row-label">Background color</span>
+        <input type="color" :value="settings.backgroundColor" @input="onColorInput('backgroundColor', ($event.target as HTMLInputElement).value)" class="color-swatch" />
+      </div>
+      <div class="divider" />
+      <div class="row">
+        <span class="row-label">Background image</span>
+        <div class="row-end">
+          <button v-if="settings.backgroundImage" class="link-btn danger" @click="clearBgImage">Remove</button>
+          <label v-else class="link-btn">
+            Choose
+            <input type="file" accept="image/*" @change="onBgImageChange" class="file-input" />
+          </label>
+        </div>
+      </div>
+      <p v-if="bgImageWarning" class="warn-text">{{ bgImageWarning }}</p>
+    </div>
 
-    <section class="section">
-      <h2 class="section-title">Countdown</h2>
-      <div class="option-row">
-        <label for="countdown-duration">Duration</label>
-        <select id="countdown-duration" :value="settings.countdownDuration" @change="update({ countdownDuration: Number(($event.target as HTMLSelectElement).value) })">
-          <option v-for="n in countdownOptions" :key="n" :value="n">{{ n }} seconds</option>
+    <!-- Camera -->
+    <p class="group-label">Camera</p>
+    <div class="group">
+      <div class="row">
+        <span class="row-label">Countdown</span>
+        <select :value="settings.countdownDuration" @change="update({ countdownDuration: Number(($event.target as HTMLSelectElement).value) })" class="select">
+          <option v-for="n in countdownOptions" :key="n" :value="n">{{ n }}s</option>
         </select>
       </div>
-    </section>
-
-    <section class="section">
-      <h2 class="section-title">Camera</h2>
-      <div class="option-row">
-        <label for="mirror-preview">Mirror preview (selfie mode)</label>
-        <input
-          id="mirror-preview"
-          type="checkbox"
-          :checked="settings.mirrorPreview"
-          @change="update({ mirrorPreview: ($event.target as HTMLInputElement).checked })"
-          class="toggle"
-        />
+      <div class="divider" />
+      <div class="row">
+        <span class="row-label">Mirror selfie</span>
+        <label class="toggle-wrap">
+          <input
+            type="checkbox"
+            :checked="settings.mirrorPreview"
+            @change="update({ mirrorPreview: ($event.target as HTMLInputElement).checked })"
+            class="toggle-input"
+          />
+          <span class="toggle-track">
+            <span class="toggle-thumb" />
+          </span>
+        </label>
       </div>
-    </section>
+    </div>
 
-    <section class="section">
-      <h2 class="section-title">Font</h2>
-      <div class="option-row">
-        <label for="font-family">Font family</label>
-        <select id="font-family" :value="settings.fontFamily" @change="update({ fontFamily: ($event.target as HTMLSelectElement).value as AppSettings['fontFamily'] })">
-          <option v-for="opt in fontOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+    <!-- Font -->
+    <p class="group-label">Display</p>
+    <div class="group">
+      <div class="row">
+        <span class="row-label">Font</span>
+        <select :value="settings.fontFamily" @change="update({ fontFamily: ($event.target as HTMLSelectElement).value as AppSettings['fontFamily'] })" class="select">
+          <option value="system">System</option>
+          <option value="mono">Monospace</option>
+          <option value="serif">Serif</option>
         </select>
       </div>
-    </section>
+    </div>
 
-    <section class="section section-reset">
-      <button class="btn-danger" @click="reset">Reset to Defaults</button>
-    </section>
+    <!-- Reset -->
+    <button class="btn-reset" @click="reset">Reset to defaults</button>
   </div>
 </template>
 
 <style scoped>
 .settings-page {
-  max-width: 560px;
+  max-width: 540px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  padding: 1.5rem 1rem 2rem;
 }
 
 .page-title {
-  margin: 0 0 1rem;
-  font-size: 1.6rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  color: var(--color-text);
+  letter-spacing: -0.02em;
 }
 
-.section {
-  background-color: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.section-title {
-  margin: 0;
-  font-size: 1rem;
+.group-label {
+  margin: 0 0 0.4rem 0.25rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--color-primary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.8rem;
-}
-
-.color-grid {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.color-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
+  letter-spacing: 0.08em;
   color: var(--color-text-muted);
-  cursor: pointer;
 }
 
-.color-item input[type="color"] {
-  width: 3rem;
-  height: 3rem;
+.group {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  min-height: 3rem;
+}
+
+.row-label {
+  font-size: 0.95rem;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.row-end {
+  display: flex;
+  align-items: center;
+}
+
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 1rem;
+}
+
+/* Color swatch */
+.color-swatch {
+  width: 2.2rem;
+  height: 2.2rem;
   padding: 0;
-  border: 2px solid var(--color-surface-2);
+  border: 2px solid var(--color-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   background: none;
 }
 
-.option-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+/* Select */
+.select {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
   font-size: 0.95rem;
-  color: var(--color-text);
-}
-
-.option-row label {
-  flex: 1;
-}
-
-select {
-  background-color: var(--color-surface-2);
-  color: var(--color-text);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
-  border-radius: var(--radius-sm);
-  padding: 0.4rem 0.6rem;
-  min-width: 160px;
-}
-
-.toggle {
-  width: 1.2rem;
-  height: 1.2rem;
-  accent-color: var(--color-primary);
+  text-align: right;
   cursor: pointer;
+  appearance: none;
+  padding-right: 0.25rem;
 }
 
-.range-input {
-  flex: 1;
-  max-width: 180px;
-  accent-color: var(--color-primary);
-}
-
-.file-label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-surface-2);
-  color: var(--color-text);
-  border: 1px dashed var(--color-text-muted);
-  border-radius: var(--radius-sm);
-  padding: 0.6rem 1.2rem;
+/* Link-style button */
+.link-btn {
+  color: var(--color-primary);
+  font-size: 0.95rem;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: border-color var(--transition);
+  font-weight: 500;
 }
 
-.file-label:hover {
-  border-color: var(--color-primary);
+.link-btn.danger {
+  color: #ff6b6b;
 }
 
 .file-input {
   display: none;
 }
 
-.bg-preview-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.bg-preview {
-  width: 80px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-}
-
-.hint {
+.warn-text {
   margin: 0;
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-.warning {
-  margin: 0;
-  font-size: 0.85rem;
+  padding: 0 1rem 0.75rem;
+  font-size: 0.78rem;
   color: #f4a261;
 }
 
-.btn-danger {
-  background-color: #c0392b;
-  color: #fff;
-  padding: 0.7rem 1.5rem;
+/* Toggle switch */
+.toggle-wrap {
+  position: relative;
+  cursor: pointer;
+}
+
+.toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-track {
+  display: block;
+  width: 2.8rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  transition: background var(--transition);
+  position: relative;
+}
+
+.toggle-input:checked + .toggle-track {
+  background: var(--color-primary);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform var(--transition);
+}
+
+.toggle-input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(1.2rem);
+}
+
+/* Reset button */
+.btn-reset {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  color: #ff6b6b;
+  font-size: 0.95rem;
   font-weight: 600;
-  border-radius: var(--radius-sm);
-  align-self: flex-start;
-}
-
-.btn-danger-sm {
-  background-color: #c0392b;
-  color: #fff;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  border-radius: var(--radius-sm);
-}
-
-.section-reset {
-  background: none;
-  border: none;
-  padding: 0.25rem 0;
+  margin-top: 0.5rem;
 }
 </style>

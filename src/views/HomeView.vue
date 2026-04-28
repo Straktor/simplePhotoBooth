@@ -4,31 +4,23 @@ import { RouterLink } from 'vue-router'
 
 <template>
   <div class="home">
+    <div class="glow" />
+
     <div class="hero">
-      <div class="hero-icon">📷</div>
-      <h1 class="hero-title">Simple Photo Booth</h1>
-      <p class="hero-subtitle">Strike a pose and capture the moment</p>
+      <div class="logo-ring">
+        <svg viewBox="0 0 24 24" class="logo-icon">
+          <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" fill="currentColor"/>
+          <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="currentColor"/>
+        </svg>
+      </div>
+
+      <h1 class="title">PhotoBooth</h1>
+      <p class="subtitle">Capture the moment</p>
     </div>
 
-    <nav class="menu">
-      <RouterLink to="/booth" class="menu-card">
-        <span class="card-icon">🎬</span>
-        <div class="card-body">
-          <h2>Photo Booth</h2>
-          <p>Take photos with a countdown timer</p>
-        </div>
-        <span class="card-arrow">→</span>
-      </RouterLink>
-
-      <RouterLink to="/settings" class="menu-card">
-        <span class="card-icon">⚙️</span>
-        <div class="card-body">
-          <h2>Settings</h2>
-          <p>Customize theme, countdown, and more</p>
-        </div>
-        <span class="card-arrow">→</span>
-      </RouterLink>
-    </nav>
+    <RouterLink to="/booth" class="btn-start">
+      Open Booth
+    </RouterLink>
   </div>
 </template>
 
@@ -39,89 +31,84 @@ import { RouterLink } from 'vue-router'
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 2rem 1rem;
-  gap: 3rem;
+  gap: 2.5rem;
+  padding: 2rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 20%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
 }
 
 .hero {
-  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.hero-icon {
-  font-size: 4rem;
-  line-height: 1;
+.logo-ring {
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
 }
 
-.hero-title {
+.logo-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.title {
   margin: 0;
-  font-size: clamp(1.8rem, 6vw, 3rem);
+  font-size: clamp(2.2rem, 8vw, 3.5rem);
   font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--color-text);
-  letter-spacing: -0.02em;
 }
 
-.hero-subtitle {
+.subtitle {
   margin: 0;
+  font-size: 1rem;
   color: var(--color-text-muted);
-  font-size: 1.1rem;
+  letter-spacing: 0.02em;
 }
 
-.menu {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-  max-width: 480px;
-}
-
-.menu-card {
-  display: flex;
+.btn-start {
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  background-color: var(--color-surface);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
-  border-radius: var(--radius);
-  color: var(--color-text);
-  text-decoration: none;
-  transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
-}
-
-.menu-card:hover {
-  background-color: color-mix(in srgb, var(--color-surface) 80%, var(--color-primary));
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
-}
-
-.card-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.card-body {
-  flex: 1;
-}
-
-.card-body h2 {
-  margin: 0 0 0.2rem;
+  justify-content: center;
+  background: var(--color-primary);
+  color: #fff;
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-text);
+  padding: 1rem 3rem;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  transition: transform var(--transition), box-shadow var(--transition);
 }
 
-.card-body p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
+.btn-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--color-primary) 50%, transparent);
 }
 
-.card-arrow {
-  color: var(--color-primary);
-  font-size: 1.25rem;
-  flex-shrink: 0;
+.btn-start:active {
+  transform: scale(0.96);
 }
 </style>

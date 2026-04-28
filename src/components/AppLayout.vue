@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterView } from 'vue-router'
-import AppHeader from '@/components/AppHeader.vue'
+import { RouterView, useRoute } from 'vue-router'
 import BottomNav from '@/components/BottomNav.vue'
 import { useSettings } from '@/composables/useSettings'
 
+const route = useRoute()
 const { settings } = useSettings()
 
 const fontMap: Record<string, string> = {
@@ -20,15 +20,16 @@ const cssVars = computed(() => ({
   '--font-family': fontMap[settings.fontFamily],
   '--bg-image': settings.backgroundImage ? `url(${settings.backgroundImage})` : 'none',
 }))
+
+const isBooth = computed(() => route.path === '/booth')
 </script>
 
 <template>
   <div class="app-layout" :style="cssVars">
-    <AppHeader />
-    <main class="app-main">
+    <main class="app-main" :class="{ 'app-main--full': isBooth }">
       <RouterView />
     </main>
-    <BottomNav />
+    <BottomNav v-if="!isBooth" />
   </div>
 </template>
 
@@ -41,7 +42,6 @@ const cssVars = computed(() => ({
   background-image: var(--bg-image);
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-family);
 }
@@ -50,7 +50,10 @@ const cssVars = computed(() => ({
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* reserve space for the fixed bottom nav (~60px + safe area) */
   padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+.app-main--full {
+  padding-bottom: 0;
 }
 </style>
