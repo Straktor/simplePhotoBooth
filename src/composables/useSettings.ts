@@ -7,8 +7,6 @@ export interface AppSettings {
   backgroundImage: string
   countdownDuration: number
   fontFamily: 'system' | 'mono' | 'serif'
-  photoFormat: 'jpeg' | 'png'
-  photoQuality: number
   mirrorPreview: boolean
 }
 
@@ -21,8 +19,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   backgroundImage: '',
   countdownDuration: 3,
   fontFamily: 'system',
-  photoFormat: 'jpeg',
-  photoQuality: 0.92,
   mirrorPreview: true,
 }
 

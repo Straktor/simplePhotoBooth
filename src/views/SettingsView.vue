@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import type { AppSettings } from '@/composables/useSettings'
 
@@ -37,15 +37,6 @@ const fontOptions = [
   { value: 'serif', label: 'Serif' },
 ] as const
 
-const photoFormatValue = computed({
-  get: () => settings.photoFormat,
-  set: (v: AppSettings['photoFormat']) => update({ photoFormat: v }),
-})
-
-const qualityPercent = computed({
-  get: () => Math.round(settings.photoQuality * 100),
-  set: (v: number) => update({ photoQuality: v / 100 }),
-})
 </script>
 
 <template>
@@ -105,21 +96,6 @@ const qualityPercent = computed({
           @change="update({ mirrorPreview: ($event.target as HTMLInputElement).checked })"
           class="toggle"
         />
-      </div>
-    </section>
-
-    <section class="section">
-      <h2 class="section-title">Photo Format</h2>
-      <div class="option-row">
-        <label for="photo-format">Format</label>
-        <select id="photo-format" v-model="photoFormatValue">
-          <option value="jpeg">JPEG</option>
-          <option value="png">PNG (lossless, larger)</option>
-        </select>
-      </div>
-      <div v-if="settings.photoFormat === 'jpeg'" class="option-row">
-        <label for="photo-quality">Quality: {{ qualityPercent }}%</label>
-        <input id="photo-quality" type="range" min="50" max="100" :value="qualityPercent" @input="qualityPercent = Number(($event.target as HTMLInputElement).value)" class="range-input" />
       </div>
     </section>
 

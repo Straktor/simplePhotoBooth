@@ -16,7 +16,7 @@ const showPreview = ref(false)
 
 async function onTakePhoto() {
   await start(settings.countdownDuration)
-  capturePhoto(settings.photoFormat, settings.photoQuality, settings.mirrorPreview)
+  capturePhoto('jpeg', 0.92, settings.mirrorPreview)
   showPreview.value = true
 }
 
