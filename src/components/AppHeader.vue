@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
 
 const deferredPrompt = ref<Event | null>(null)
 const showInstall = ref(false)
@@ -26,19 +25,10 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
 
 <template>
   <header class="app-header">
-    <RouterLink to="/" class="logo">
-      <span class="logo-icon">📷</span>
-      <span class="logo-text">PhotoBooth</span>
-    </RouterLink>
-
-    <nav class="nav">
-      <RouterLink to="/" class="nav-link">Home</RouterLink>
-      <RouterLink to="/booth" class="nav-link">Booth</RouterLink>
-      <RouterLink to="/settings" class="nav-link">Settings</RouterLink>
-    </nav>
-
+    <span class="logo-icon">📷</span>
+    <span class="logo-text">PhotoBooth</span>
     <button v-if="showInstall" class="install-btn" @click="install">
-      Install App
+      ⬇ Install
     </button>
   </header>
 </template>
@@ -47,60 +37,31 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
 .app-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
-  background-color: var(--color-surface);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
   gap: 0.5rem;
-  color: var(--color-text);
-  font-weight: 700;
-  font-size: 1.1rem;
-  text-decoration: none;
-  margin-right: auto;
+  padding: 0.6rem 1.25rem;
+  padding-top: calc(0.6rem + env(safe-area-inset-top));
+  background-color: var(--color-surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 .logo-icon {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   line-height: 1;
 }
 
-.nav {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.nav-link {
-  padding: 0.4rem 0.8rem;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  transition: color var(--transition), background-color var(--transition);
-  text-decoration: none;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
+.logo-text {
+  font-weight: 700;
+  font-size: 1rem;
   color: var(--color-text);
-  background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
-}
-
-.nav-link.router-link-exact-active {
-  color: var(--color-primary);
+  flex: 1;
 }
 
 .install-btn {
   background-color: var(--color-primary);
   color: #fff;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
   white-space: nowrap;
 }
 </style>

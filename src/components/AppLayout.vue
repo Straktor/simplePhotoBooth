@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 import { useSettings } from '@/composables/useSettings'
 
 const { settings } = useSettings()
@@ -27,6 +28,7 @@ const cssVars = computed(() => ({
     <main class="app-main">
       <RouterView />
     </main>
+    <BottomNav />
   </div>
 </template>
 
@@ -48,5 +50,7 @@ const cssVars = computed(() => ({
   flex: 1;
   display: flex;
   flex-direction: column;
+  /* reserve space for the fixed bottom nav (~60px + safe area) */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
 </style>
