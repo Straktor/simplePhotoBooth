@@ -14,12 +14,12 @@ export interface AppSettings {
 const STORAGE_KEY = 'photobooth-settings-v2'
 
 const DEFAULT_SETTINGS: AppSettings = {
-  activeThemeKey: 'neon',
+  activeThemeKey: 'light',
   customThemeCfg: { primary: '#7c6fff', accent: '#ff6b9d', bg: '#09090f', bgImage: null },
   appTitle: 'Simple Photo Booth',
   countdownDuration: 3,
   mirrorPreview: true,
-  darkMode: true,
+  darkMode: false,
   capturedPhotos: [],
 }
 

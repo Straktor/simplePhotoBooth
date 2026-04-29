@@ -21,6 +21,7 @@ const emit = defineEmits<{
   updateCountdown: [dur: number]
   updateMirror: [val: boolean]
   updateDarkMode: [val: boolean]
+  reset: []
 }>()
 
 const t = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode))
@@ -215,6 +216,15 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
       </div>
     </div>
 
+    <!-- Reset -->
+    <div class="s-section">
+      <button
+        class="reset-btn"
+        :style="{ border: `1px solid ${t.border}`, color: t.textMuted, fontFamily: t.font }"
+        @click="emit('reset')"
+      >Reset to defaults</button>
+    </div>
+
     <div style="height:30px" />
   </div>
 </template>
@@ -365,6 +375,16 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
   gap: 6px;
   transition: all 0.18s;
 }
+.reset-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  background: transparent;
+  transition: opacity 0.18s;
+}
+.reset-btn:active { opacity: 0.6; }
 .countdown-btns {
   display: flex;
   gap: 8px;

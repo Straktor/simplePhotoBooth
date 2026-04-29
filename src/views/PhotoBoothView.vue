@@ -12,7 +12,7 @@ import GalleryView from '@/views/GalleryView.vue'
 
 type Screen = 'booth' | 'settings' | 'customTheme' | 'gallery'
 
-const { settings, update, updateCustomTheme, addPhoto } = useSettings()
+const { settings, update, updateCustomTheme, addPhoto, reset } = useSettings()
 
 const screen = ref<Screen>('booth')
 const isFullscreen = ref(false)
@@ -105,6 +105,7 @@ const galleryTheme = computed(() => t.value)
     @update-countdown="(v) => update({ countdownDuration: v })"
     @update-mirror="(v) => update({ mirrorPreview: v })"
     @update-dark-mode="(v) => update({ darkMode: v })"
+    @reset="reset"
   />
 
   <CustomThemeView
