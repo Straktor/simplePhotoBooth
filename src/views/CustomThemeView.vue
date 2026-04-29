@@ -27,7 +27,18 @@ const p = computed(() => local.value.primary)
 const a = computed(() => local.value.accent)
 const bg = computed(() => local.value.bg)
 const border = computed(() => p.value + '30')
-const muted = 'rgba(255,255,255,0.42)'
+
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '')
+  if (c.length !== 6) return false
+  const r = parseInt(c.slice(0,2), 16)
+  const g = parseInt(c.slice(2,4), 16)
+  const b = parseInt(c.slice(4,6), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128
+}
+
+const textColor = computed(() => isLightColor(bg.value) ? '#1a1a1a' : '#f0f0f0')
+const muted = computed(() => isLightColor(bg.value) ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.42)')
 
 function patch(partial: Partial<CustomThemeCfg>) {
   Object.assign(local.value, partial)
@@ -56,7 +67,7 @@ function onApply() {
 </script>
 
 <template>
-  <div class="custom-theme" :style="{ background: bg, color: '#f0f0f0' }">
+  <div class="custom-theme" :style="{ background: bg, color: textColor }">
 
     <!-- Header -->
     <div class="header" :style="{ borderBottom: `1px solid ${border}`, background: bg }">
