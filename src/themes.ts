@@ -186,6 +186,11 @@ export interface CustomThemeCfg {
   bgImage: string | null
 }
 
+export interface CustomThemeVariants {
+  dark: CustomThemeCfg
+  light: CustomThemeCfg
+}
+
 export const FONTS = [
   { key: 'system', label: 'System', css: 'system-ui,-apple-system,sans-serif' },
   { key: 'sans',   label: 'Sans',   css: '"Helvetica Neue",Helvetica,Arial,sans-serif' },
@@ -204,9 +209,9 @@ export const GRADIENTS = [
   { label:'Dusk',     value:'linear-gradient(160deg,#1a0a2a,#3a1a4a 50%,#ff8c44)' },
 ]
 
-export function resolveTheme(activeKey: string, customCfg: CustomThemeCfg, darkMode: boolean, fontOverride?: string): ResolvedTheme {
+export function resolveTheme(activeKey: string, customCfg: CustomThemeVariants, darkMode: boolean, fontOverride?: string): ResolvedTheme {
   if (activeKey === 'custom') {
-    const { primary, accent, bg, bgImage } = customCfg
+    const { primary, accent, bg, bgImage } = darkMode ? customCfg.dark : customCfg.light
     return {
       ...PRESETS.neon.dark,
       bg, primary, accent,

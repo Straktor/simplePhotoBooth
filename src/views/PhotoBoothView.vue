@@ -5,7 +5,7 @@ import { useCamera } from '@/composables/useCamera'
 import { useCountdown } from '@/composables/useCountdown'
 import { useSettings } from '@/composables/useSettings'
 import { resolveTheme, FONTS } from '@/themes'
-import type { CustomThemeCfg } from '@/themes'
+import type { CustomThemeVariants } from '@/themes'
 import ThemeDecorations from '@/components/ThemeDecorations.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import CustomThemeView from '@/views/CustomThemeView.vue'
@@ -34,9 +34,11 @@ const customCfg = computed(() => settings.customThemeCfg)
 const fontCss = computed(() => FONTS.find(f => f.key === settings.fontFamily)?.css)
 const theme = computed(() => resolveTheme(activeKey.value, customCfg.value, settings.darkMode, fontCss.value))
 
-const bgImage = computed(() =>
-  activeKey.value === 'custom' ? customCfg.value.bgImage : null
-)
+const bgImage = computed(() => {
+  if (activeKey.value !== 'custom') return null
+  const variant = settings.darkMode ? customCfg.value.dark : customCfg.value.light
+  return variant.bgImage ?? null
+})
 
 const mirrorStyle = computed(() =>
   (settings.mirrorPreview && isFront.value) ? 'scaleX(-1)' : 'none'
@@ -79,7 +81,7 @@ function handleSelectTheme(key: string) {
   update({ activeThemeKey: key })
 }
 
-function handleUpdateCustom(cfg: CustomThemeCfg) {
+function handleUpdateCustom(cfg: CustomThemeVariants) {
   updateCustomTheme(cfg)
 }
 

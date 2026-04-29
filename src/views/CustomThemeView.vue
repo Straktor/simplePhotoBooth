@@ -1,33 +1,49 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { GRADIENTS } from '@/themes'
-import type { CustomThemeCfg } from '@/themes'
+import type { CustomThemeVariants } from '@/themes'
 
 const { t } = useI18n()
 
-const props = defineProps<{ cfg: CustomThemeCfg }>()
+const props = defineProps<{ cfg: CustomThemeVariants }>()
 const emit = defineEmits<{
-  update: [cfg: CustomThemeCfg]
+  update: [cfg: CustomThemeVariants]
   back: []
   apply: []
 }>()
 
 type BgMode = 'solid' | 'gradient' | 'url' | 'phone'
+type Variant = 'light' | 'dark'
 
-const bgMode = ref<BgMode>(
-  !props.cfg.bgImage ? 'solid'
-  : props.cfg.bgImage.startsWith('url("data:') ? 'phone'
-  : props.cfg.bgImage.startsWith('url(') ? 'url'
-  : 'gradient'
-)
+const editingVariant = ref<Variant>('light')
+
+const local = ref<CustomThemeVariants>({
+  dark:  { ...props.cfg.dark },
+  light: { ...props.cfg.light },
+})
+
+const cur = computed(() => local.value[editingVariant.value])
+
+const p = computed(() => cur.value.primary)
+const a = computed(() => cur.value.accent)
+const bg = computed(() => cur.value.bg)
+
+function bgModeFromCfg(bgImage: string | null): BgMode {
+  if (!bgImage) return 'solid'
+  if (bgImage.startsWith('url("data:')) return 'phone'
+  if (bgImage.startsWith('url(')) return 'url'
+  return 'gradient'
+}
+
+const bgMode = ref<BgMode>(bgModeFromCfg(cur.value.bgImage))
+
+watch(editingVariant, (v) => {
+  bgMode.value = bgModeFromCfg(local.value[v].bgImage)
+})
+
 const urlDraft = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
-const local = ref<CustomThemeCfg>({ ...props.cfg })
-
-const p = computed(() => local.value.primary)
-const a = computed(() => local.value.accent)
-const bg = computed(() => local.value.bg)
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '')
@@ -42,6 +58,7 @@ const textColor = computed(() => isLightColor(bg.value) ? '#1a1a1a' : '#f0f0f0')
 const textMuted  = computed(() => isLightColor(bg.value) ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.42)')
 const surface    = computed(() => isLightColor(bg.value) ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)')
 const borderClr  = computed(() => isLightColor(bg.value) ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)')
+const segBg      = computed(() => isLightColor(bg.value) ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)')
 
 const colorItems = computed(() => [
   { key: 'primary', label: t('customTheme.primaryLabel'), desc: t('customTheme.primaryDesc') },
@@ -55,9 +72,9 @@ const bgTabs = computed(() => [
   ['phone',    t('customTheme.cameraRoll')],
 ] as [BgMode, string][])
 
-function patch(partial: Partial<CustomThemeCfg>) {
-  Object.assign(local.value, partial)
-  emit('update', { ...local.value })
+function patch(partial: Partial<typeof cur.value>) {
+  Object.assign(local.value[editingVariant.value], partial)
+  emit('update', { dark: { ...local.value.dark }, light: { ...local.value.light } })
 }
 
 function setBgMode(mode: BgMode) {
@@ -81,7 +98,7 @@ function handleFile(e: Event) {
 }
 
 function onApply() {
-  emit('update', { ...local.value })
+  emit('update', { dark: { ...local.value.dark }, light: { ...local.value.light } })
   emit('apply')
 }
 </script>
@@ -105,14 +122,53 @@ function onApply() {
 
     <div class="content">
 
+      <!-- VARIANT TOGGLE -->
+      <div class="section-label" :style="{ color: textMuted }">{{ t('customTheme.subtitle') }}</div>
+      <div class="group" :style="{ background: surface, border: `1px solid ${borderClr}` }">
+        <div class="row">
+          <div class="seg" :style="{ background: segBg }">
+            <button
+              class="seg-btn"
+              :style="{
+                background: editingVariant === 'light' ? a : 'transparent',
+                color: editingVariant === 'light' ? '#fff' : textMuted,
+              }"
+              @click="editingVariant = 'light'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              {{ t('settings.light') }}
+            </button>
+            <button
+              class="seg-btn"
+              :style="{
+                background: editingVariant === 'dark' ? a : 'transparent',
+                color: editingVariant === 'dark' ? '#fff' : textMuted,
+              }"
+              @click="editingVariant = 'dark'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              {{ t('settings.dark') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- PREVIEW -->
       <div class="section-label" :style="{ color: textMuted }">{{ t('customTheme.preview') }}</div>
       <div
         class="preview"
         :style="{
           border: `1px solid ${borderClr}`,
-          background: local.bgImage ? undefined : bg,
-          backgroundImage: local.bgImage ?? undefined,
+          background: cur.bgImage ? undefined : bg,
+          backgroundImage: cur.bgImage ?? undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }"
@@ -146,15 +202,12 @@ function onApply() {
         >
           <span class="row-label">{{ item.label }}</span>
           <div class="color-right">
-            <span class="color-hex" :style="{ color: textMuted }">{{ (local as any)[item.key] }}</span>
-            <div
-              class="color-swatch"
-              :style="{ background: (local as any)[item.key], boxShadow: `0 2px 8px ${(local as any)[item.key]}66` }"
-            />
+            <span class="color-hex" :style="{ color: textMuted }">{{ (cur as any)[item.key] }}</span>
+            <div class="color-swatch" :style="{ background: (cur as any)[item.key], boxShadow: `0 2px 8px ${(cur as any)[item.key]}66` }" />
           </div>
           <input
             type="color"
-            :value="(local as any)[item.key]"
+            :value="(cur as any)[item.key]"
             class="hidden-color-input"
             @input="(e) => patch({ [item.key]: (e.target as HTMLInputElement).value } as any)"
           />
@@ -165,9 +218,9 @@ function onApply() {
       <div class="section-label" :style="{ color: textMuted }">{{ t('customTheme.bgImage') }}</div>
       <div class="group" :style="{ background: surface, border: `1px solid ${borderClr}` }">
 
-        <!-- Type selector row -->
+        <!-- Type selector -->
         <div class="row" style="border-bottom: none">
-          <div class="bg-seg" :style="{ background: isLightColor(bg) ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)' }">
+          <div class="bg-seg" :style="{ background: segBg }">
             <button
               v-for="[mode, lbl] in bgTabs"
               :key="mode"
@@ -187,12 +240,12 @@ function onApply() {
         <label v-if="bgMode === 'solid'" class="row color-row" style="border-bottom:none">
           <span class="row-label">{{ t('customTheme.bgSolidLabel') }}</span>
           <div class="color-right">
-            <span class="color-hex" :style="{ color: textMuted }">{{ local.bg }}</span>
-            <div class="color-swatch" :style="{ background: local.bg }" />
+            <span class="color-hex" :style="{ color: textMuted }">{{ cur.bg }}</span>
+            <div class="color-swatch" :style="{ background: cur.bg }" />
           </div>
           <input
             type="color"
-            :value="local.bg"
+            :value="cur.bg"
             class="hidden-color-input"
             @input="(e) => patch({ bg: (e.target as HTMLInputElement).value, bgImage: null })"
           />
@@ -204,10 +257,10 @@ function onApply() {
             v-for="grad in GRADIENTS"
             :key="grad.label"
             class="grad-cell"
-            :style="{ outline: `2px solid ${local.bgImage === grad.value ? a : 'transparent'}` }"
+            :style="{ outline: `2px solid ${cur.bgImage === grad.value ? a : 'transparent'}` }"
             @click="patch({ bgImage: grad.value })"
           >
-            <div class="grad-preview" :style="{ background: grad.value ?? local.bg, backgroundImage: grad.value ?? undefined }" />
+            <div class="grad-preview" :style="{ background: grad.value ?? cur.bg, backgroundImage: grad.value ?? undefined }" />
             <div class="grad-label">{{ grad.label }}</div>
           </button>
         </div>
@@ -227,8 +280,8 @@ function onApply() {
               {{ t('customTheme.load') }}
             </button>
           </div>
-          <div v-if="local.bgImage && local.bgImage.startsWith('url(&quot;http')" class="url-loaded-row">
-            <div class="url-thumb" :style="{ backgroundImage: local.bgImage }" />
+          <div v-if="cur.bgImage && cur.bgImage.startsWith('url(&quot;http')" class="url-loaded-row">
+            <div class="url-thumb" :style="{ backgroundImage: cur.bgImage }" />
             <span class="url-loaded-text" :style="{ color: textMuted }">{{ t('customTheme.imageFromUrl') }}</span>
             <button class="remove-btn" @click="patch({ bgImage: null })">×</button>
           </div>
@@ -237,8 +290,8 @@ function onApply() {
         <!-- Camera Roll -->
         <div v-else-if="bgMode === 'phone'" class="phone-section">
           <input ref="fileInput" type="file" accept="image/*" class="hidden-file" @change="handleFile" />
-          <div v-if="local.bgImage?.startsWith('url(&quot;data:')" class="phone-loaded">
-            <div class="phone-thumb" :style="{ backgroundImage: local.bgImage }" />
+          <div v-if="cur.bgImage?.startsWith('url(&quot;data:')" class="phone-loaded">
+            <div class="phone-thumb" :style="{ backgroundImage: cur.bgImage }" />
             <div class="phone-actions">
               <button
                 class="phone-change-btn"
@@ -313,6 +366,7 @@ function onApply() {
   font-weight: 700;
   min-width: 64px;
   text-align: center;
+  cursor: pointer;
 }
 
 /* ── Content ── */
@@ -352,6 +406,31 @@ function onApply() {
   height: 1px;
   margin: 0 16px;
 }
+
+/* ── Segmented control ── */
+.seg {
+  display: flex;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+  width: 100%;
+}
+.seg-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.seg-btn svg { display: block; flex-shrink: 0; }
 
 /* ── Preview ── */
 .preview {
@@ -519,12 +598,12 @@ function onApply() {
   font-weight: 700;
   font-size: 13px;
   flex-shrink: 0;
+  cursor: pointer;
 }
 .url-loaded-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-top: 2px;
 }
 .url-thumb {
   width: 36px; height: 36px;

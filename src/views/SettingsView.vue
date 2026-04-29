@@ -2,14 +2,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PRESETS, FONTS, resolveTheme } from '@/themes'
-import type { CustomThemeCfg } from '@/themes'
+import type { CustomThemeVariants } from '@/themes'
 import ThemeIcon from '@/components/ThemeIcon.vue'
 
 const { t } = useI18n()
 
 const props = defineProps<{
   activeKey: string
-  customCfg: CustomThemeCfg
+  customCfg: CustomThemeVariants
   appTitle: string
   countdownDuration: number
   mirrorPreview: boolean
@@ -34,6 +34,7 @@ const emit = defineEmits<{
 const fontCss = computed(() => FONTS.find(f => f.key === props.fontFamily)?.css)
 const t2 = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode, fontCss.value))
 const mode = computed<'dark' | 'light'>(() => props.darkMode ? 'dark' : 'light')
+const activeCfg = computed(() => props.darkMode ? props.customCfg.dark : props.customCfg.light)
 const allThemes = computed(() => Object.entries(PRESETS))
 
 const LANGUAGES = [
@@ -167,29 +168,29 @@ const LANGUAGES = [
         <div
           class="theme-card"
           :style="{
-            border: `2px solid ${activeKey === 'custom' ? customCfg.accent : t2.border}`,
-            background: activeKey === 'custom' ? customCfg.accent + '12' : t2.surface,
+            border: `2px solid ${activeKey === 'custom' ? activeCfg.accent : t2.border}`,
+            background: activeKey === 'custom' ? activeCfg.accent + '12' : t2.surface,
           }"
           @click="emit('editCustom')"
         >
           <div
             class="tc-top"
             :style="{
-              background: customCfg.bgImage ? undefined : customCfg.bg,
-              backgroundImage: customCfg.bgImage ?? undefined,
+              background: activeCfg.bgImage ? undefined : activeCfg.bg,
+              backgroundImage: activeCfg.bgImage ?? undefined,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }"
           >
-            <div class="tc-custom-icon" :style="{ background: customCfg.primary + '44', border: `1.5px solid ${customCfg.accent}` }">
-              <ThemeIcon theme-key="custom" :primary="customCfg.primary" :accent="customCfg.accent" :size="16" />
+            <div class="tc-custom-icon" :style="{ background: activeCfg.primary + '44', border: `1.5px solid ${activeCfg.accent}` }">
+              <ThemeIcon theme-key="custom" :primary="activeCfg.primary" :accent="activeCfg.accent" :size="16" />
             </div>
           </div>
           <div class="tc-bottom" :style="{ borderTop: `1px solid rgba(255,255,255,0.08)`, background: '#1a1a2e' }">
             <div class="tc-name" style="color:#ccc">{{ t('settings.themeCustom') }}</div>
             <div class="tc-edit-hint">{{ t('settings.themeEdit') }}</div>
           </div>
-          <div v-if="activeKey === 'custom'" class="tc-check" :style="{ background: customCfg.accent }">
+          <div v-if="activeKey === 'custom'" class="tc-check" :style="{ background: activeCfg.accent }">
             <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>

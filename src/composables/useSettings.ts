@@ -1,10 +1,10 @@
 import { reactive, readonly, watch } from 'vue'
-import type { CustomThemeCfg } from '@/themes'
+import type { CustomThemeVariants } from '@/themes'
 import { i18n } from '@/i18n'
 
 export interface AppSettings {
   activeThemeKey: string
-  customThemeCfg: CustomThemeCfg
+  customThemeCfg: CustomThemeVariants
   appTitle: string
   countdownDuration: number
   mirrorPreview: boolean
@@ -18,7 +18,10 @@ const STORAGE_KEY = 'photobooth-settings-v2'
 
 const DEFAULT_SETTINGS: AppSettings = {
   activeThemeKey: 'light',
-  customThemeCfg: { primary: '#7c6fff', accent: '#ff6b9d', bg: '#09090f', bgImage: null },
+  customThemeCfg: {
+    dark:  { primary: '#7c6fff', accent: '#ff6b9d', bg: '#09090f', bgImage: null },
+    light: { primary: '#7c6fff', accent: '#ff6b9d', bg: '#f5f5f5', bgImage: null },
+  },
   appTitle: 'Simple Photo Booth',
   countdownDuration: 3,
   mirrorPreview: true,
@@ -26,6 +29,19 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: 'system',
   language: 'en',
   capturedPhotos: [],
+}
+
+function migrateCustomTheme(raw: any): CustomThemeVariants {
+  const def = DEFAULT_SETTINGS.customThemeCfg
+  if (!raw) return def
+  if (!('dark' in raw)) {
+    // Old flat format — promote to dark variant, keep default light
+    return { dark: { ...def.dark, ...raw }, light: { ...def.light } }
+  }
+  return {
+    dark:  { ...def.dark,  ...(raw.dark  ?? {}) },
+    light: { ...def.light, ...(raw.light ?? {}) },
+  }
 }
 
 function loadFromStorage(): Partial<AppSettings> {
@@ -41,7 +57,7 @@ const stored = loadFromStorage()
 const settings = reactive<AppSettings>({
   ...DEFAULT_SETTINGS,
   ...stored,
-  customThemeCfg: { ...DEFAULT_SETTINGS.customThemeCfg, ...(stored.customThemeCfg ?? {}) },
+  customThemeCfg: migrateCustomTheme(stored.customThemeCfg),
 })
 
 watch(() => settings.language, (lang) => {
@@ -62,8 +78,9 @@ export function useSettings() {
     Object.assign(settings, partial)
   }
 
-  function updateCustomTheme(partial: Partial<CustomThemeCfg>) {
-    Object.assign(settings.customThemeCfg, partial)
+  function updateCustomTheme(variants: CustomThemeVariants) {
+    Object.assign(settings.customThemeCfg.dark,  variants.dark)
+    Object.assign(settings.customThemeCfg.light, variants.light)
   }
 
   function addPhoto(dataUrl: string) {
@@ -71,8 +88,9 @@ export function useSettings() {
   }
 
   function reset() {
-    Object.assign(settings, DEFAULT_SETTINGS)
-    Object.assign(settings.customThemeCfg, DEFAULT_SETTINGS.customThemeCfg)
+    Object.assign(settings, { ...DEFAULT_SETTINGS, capturedPhotos: settings.capturedPhotos })
+    Object.assign(settings.customThemeCfg.dark,  DEFAULT_SETTINGS.customThemeCfg.dark)
+    Object.assign(settings.customThemeCfg.light, DEFAULT_SETTINGS.customThemeCfg.light)
   }
 
   return { settings: readonly(settings), update, updateCustomTheme, addPhoto, reset }
