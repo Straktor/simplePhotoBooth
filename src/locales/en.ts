@@ -39,7 +39,7 @@ export default {
     preview: 'Preview',
     colors: 'Colors',
     copyFromPreset: 'Copy colors from preset',
-    bgImage: 'Background Image',
+    bgImage: 'Background',
     bgColorLabel: 'Background',
     bgColorDesc: 'App & decoration area',
     primaryLabel: 'Primary',

@@ -39,7 +39,7 @@ export default {
     preview: 'Aperçu',
     colors: 'Couleurs',
     copyFromPreset: "Copier les couleurs d'un thème",
-    bgImage: 'Image de fond',
+    bgImage: 'Fond',
     bgColorLabel: 'Fond',
     bgColorDesc: "Zone d'application et décorations",
     primaryLabel: 'Primaire',
