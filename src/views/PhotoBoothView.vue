@@ -21,12 +21,13 @@ const isFullscreen = ref(false)
 const flash = ref(false)
 const previewDataUrl = ref<string | null>(null)
 const showPreview = ref(false)
+const photoSaved = ref(false)
 const isFront = ref(true)
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-const { isCameraReady, error, startCamera, flipCamera, capturePhoto } = useCamera(videoRef, canvasRef)
+const { isCameraReady, error, startCamera, flipCamera, capturePhoto, savePhoto } = useCamera(videoRef, canvasRef)
 const { count: countdown, isRunning, start: startCountdown, cancel: cancelCountdown } = useCountdown()
 
 const activeKey = computed(() => settings.activeThemeKey)
@@ -67,9 +68,16 @@ async function handleShoot() {
   const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value)
   addPhoto(dataUrl)
   previewDataUrl.value = dataUrl
+  photoSaved.value = false
   showPreview.value = true
   setTimeout(() => { flash.value = false }, 400)
-  setTimeout(() => { showPreview.value = false }, 3200)
+}
+
+async function handleSavePhoto() {
+  if (!previewDataUrl.value) return
+  await savePhoto(previewDataUrl.value)
+  photoSaved.value = true
+  setTimeout(() => { showPreview.value = false }, 1200)
 }
 
 function handleFlip() {
@@ -281,10 +289,21 @@ const galleryTheme = computed(() => theme.value)
         <div v-if="flash" class="flash-overlay" />
 
         <!-- Preview -->
-        <div v-if="showPreview && previewDataUrl" class="preview-wrap">
+        <div v-if="showPreview && previewDataUrl" class="preview-wrap" @click.self="showPreview = false">
           <div class="preview-card">
             <img :src="previewDataUrl" class="preview-img" alt="captured" />
-            <div class="preview-label">{{ t('booth.saved') }}</div>
+            <button
+              v-if="!photoSaved"
+              class="preview-save-btn"
+              :style="{ background: theme.accent }"
+              @click="handleSavePhoto"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+              </svg>
+              {{ t('booth.saveToPhotos') }}
+            </button>
+            <div v-else class="preview-label">{{ t('booth.saved') }}</div>
           </div>
         </div>
       </div>
@@ -644,13 +663,28 @@ const galleryTheme = computed(() => theme.value)
   object-fit: cover;
   display: block;
 }
+.preview-save-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 6px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  border: none;
+  line-height: 1;
+}
 .preview-label {
   background: rgba(0,0,0,0.65);
   backdrop-filter: blur(8px);
   color: #fff;
   font-size: 10px;
   text-align: center;
-  padding: 5px;
+  padding: 7px 6px;
 }
 
 /* Bottom controls */

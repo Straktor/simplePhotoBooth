@@ -25,6 +25,7 @@ export default {
     startCamera: 'Démarrer la caméra',
     retry: 'Réessayer',
     tapToCancel: 'appuyer pour annuler',
+    saveToPhotos: 'Enregistrer dans Photos',
     saved: '✓ Enregistré',
   },
   gallery: {

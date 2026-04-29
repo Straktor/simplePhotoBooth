@@ -85,6 +85,26 @@ export function useCamera(
     a.click()
   }
 
+  async function savePhoto(dataUrl: string): Promise<void> {
+    const filename = `photobooth-${Date.now()}.jpg`
+    if (navigator.canShare) {
+      try {
+        const blob = await (await fetch(dataUrl)).blob()
+        const file = new File([blob], filename, { type: 'image/jpeg' })
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file] })
+          return
+        }
+      } catch {
+        // user cancelled or API unsupported — fall through
+      }
+    }
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = filename
+    a.click()
+  }
+
   onUnmounted(stopCamera)
 
   return {
@@ -98,5 +118,6 @@ export function useCamera(
     flipCamera,
     capturePhoto,
     downloadPhoto,
+    savePhoto,
   }
 }

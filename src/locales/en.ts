@@ -25,6 +25,7 @@ export default {
     startCamera: 'Start Camera',
     retry: 'Retry',
     tapToCancel: 'tap to cancel',
+    saveToPhotos: 'Save to Photos',
     saved: '✓ Saved',
   },
   gallery: {
