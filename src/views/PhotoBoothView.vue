@@ -239,8 +239,8 @@ const galleryTheme = computed(() => t.value)
           <button class="retry-btn" :style="{ background: t.accent }" @click="startCamera">Retry</button>
         </div>
 
-        <!-- Fullscreen toggle -->
-        <button class="fs-btn" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
+        <!-- Fullscreen toggle — top-right in fullscreen, bottom-right otherwise -->
+        <button class="fs-btn" :class="isFullscreen ? 'fs-btn--top' : 'fs-btn--bottom'" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
           <!-- minimize-2 when fullscreen -->
           <svg v-if="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
@@ -520,8 +520,8 @@ const galleryTheme = computed(() => t.value)
 }
 .fs-btn {
   position: absolute;
-  bottom: 14px; right: 14px;
-  z-index: 15;
+  right: 14px;
+  z-index: 25;
   width: 34px; height: 34px;
   border-radius: 9px;
   backdrop-filter: blur(10px);
@@ -529,6 +529,8 @@ const galleryTheme = computed(() => t.value)
   align-items: center;
   justify-content: center;
 }
+.fs-btn--bottom { bottom: 14px; }
+.fs-btn--top    { top: 14px; }
 
 /* Start / error overlays */
 .start-overlay, .error-overlay {
