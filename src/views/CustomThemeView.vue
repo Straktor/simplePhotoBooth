@@ -60,6 +60,11 @@ function patch(partial: Partial<CustomThemeCfg>) {
   emit('update', { ...local.value })
 }
 
+function setBgMode(mode: BgMode) {
+  bgMode.value = mode
+  if (mode === 'solid') patch({ bgImage: null })
+}
+
 function applyUrl() {
   if (urlDraft.value.trim()) patch({ bgImage: `url("${urlDraft.value.trim()}")` })
 }
@@ -171,7 +176,7 @@ function onApply() {
                 background: bgMode === mode ? a : 'transparent',
                 color: bgMode === mode ? '#fff' : textMuted,
               }"
-              @click="bgMode = mode as BgMode"
+              @click="setBgMode(mode as BgMode)"
             >{{ lbl }}</button>
           </div>
         </div>
