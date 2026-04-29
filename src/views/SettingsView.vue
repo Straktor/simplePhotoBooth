@@ -48,13 +48,13 @@ const LANGUAGES = [
 
     <!-- Header -->
     <div class="hdr" :style="{ background: t2.bg, borderBottom: `1px solid ${t2.border}` }">
-      <button class="back-btn" :style="{ color: t2.accent }" @click="emit('back')">
+      <button class="back-btn" :style="{ color: t2.primary }" @click="emit('back')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
         </svg>
         {{ t('settings.back') }}
       </button>
-      <span class="hdr-title">{{ t('settings.title') }}</span>
+      <span class="hdr-title" :style="{ color: t2.primary }">{{ t('settings.title') }}</span>
       <div style="width:64px" />
     </div>
 

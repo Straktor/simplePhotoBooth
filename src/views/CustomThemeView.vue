@@ -108,13 +108,13 @@ function onApply() {
 
     <!-- Header -->
     <div class="hdr" :style="{ background: bg, borderBottom: `1px solid ${borderClr}` }">
-      <button class="back-btn" :style="{ color: a }" @click="emit('back')">
+      <button class="back-btn" :style="{ color: p }" @click="emit('back')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
         </svg>
         {{ t('settings.back') }}
       </button>
-      <span class="hdr-title">{{ t('customTheme.title') }}</span>
+      <span class="hdr-title" :style="{ color: p }">{{ t('customTheme.title') }}</span>
       <button class="apply-btn" :style="{ background: a, boxShadow: `0 2px 14px ${a}55` }" @click="onApply">
         {{ t('customTheme.applyLabel') }}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block">
