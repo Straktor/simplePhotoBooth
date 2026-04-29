@@ -130,7 +130,7 @@ const galleryTheme = computed(() => t.value)
     <ThemeDecorations v-if="!isFullscreen" :theme-key="activeKey" />
 
     <!-- Top bar -->
-    <div v-if="!isFullscreen" class="topbar">
+    <div class="topbar" :class="{ 'topbar--fs': isFullscreen }">
       <div class="app-title-wrap">
         <span
           class="app-title"
@@ -221,8 +221,8 @@ const galleryTheme = computed(() => t.value)
           <button class="retry-btn" :style="{ background: t.accent }" @click="startCamera">Retry</button>
         </div>
 
-        <!-- Flip + Fullscreen button group -->
-        <div class="vf-btn-group" :class="isFullscreen ? 'vf-btn-group--top' : 'vf-btn-group--bottom'">
+        <!-- Flip + Fullscreen button group (normal mode only) -->
+        <div v-if="!isFullscreen" class="vf-btn-group vf-btn-group--bottom">
           <button class="fs-btn" :style="fsBtnStyle" @click="handleFlip">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 7h-9"/><path d="M14 17H5"/>
@@ -339,19 +339,34 @@ const galleryTheme = computed(() => t.value)
         <div class="shutter-inner" />
       </button>
 
-      <div class="timer-stack">
-        <button
-          v-for="s in [3, 5, 10]"
-          :key="s"
-          class="timer-btn"
-          :style="{
-            background: settings.countdownDuration === s ? t.primary : 'rgba(255,255,255,0.15)',
-            border: `1px solid ${settings.countdownDuration === s ? t.primary : 'rgba(255,255,255,0.2)'}`,
-            color: settings.countdownDuration === s ? '#fff' : 'rgba(255,255,255,0.55)',
-            fontFamily: t.font,
-          }"
-          @click="update({ countdownDuration: s })"
-        >{{ s }}s</button>
+      <div class="fs-right-group">
+        <button class="fs-btn" style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)" @click="handleFlip">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 7h-9"/><path d="M14 17H5"/>
+            <polyline points="15 4 20 7 15 10"/>
+            <polyline points="9 20 4 17 9 14"/>
+          </svg>
+        </button>
+        <button class="fs-btn" style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)" @click="isFullscreen = false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+          </svg>
+        </button>
+        <div class="timer-stack">
+          <button
+            v-for="s in [3, 5, 10]"
+            :key="s"
+            class="timer-btn"
+            :style="{
+              background: settings.countdownDuration === s ? t.primary : 'rgba(255,255,255,0.15)',
+              border: `1px solid ${settings.countdownDuration === s ? t.primary : 'rgba(255,255,255,0.2)'}`,
+              color: settings.countdownDuration === s ? '#fff' : 'rgba(255,255,255,0.55)',
+              fontFamily: t.font,
+            }"
+            @click="update({ countdownDuration: s })"
+          >{{ s }}s</button>
+        </div>
       </div>
     </div>
 
@@ -379,6 +394,13 @@ const galleryTheme = computed(() => t.value)
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+}
+.topbar--fs {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 25;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);
+  padding-bottom: 20px;
 }
 .app-title-wrap {
   display: flex;
@@ -635,6 +657,11 @@ const galleryTheme = computed(() => t.value)
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.fs-right-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .gallery-thumb-btn { background: none; border: none; padding: 0; }
 .gallery-thumb {
