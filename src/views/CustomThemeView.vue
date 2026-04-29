@@ -116,7 +116,10 @@ function onApply() {
       </button>
       <span class="hdr-title">{{ t('customTheme.title') }}</span>
       <button class="apply-btn" :style="{ background: a, boxShadow: `0 2px 14px ${a}55` }" @click="onApply">
-        {{ t('customTheme.apply') }}
+        {{ t('customTheme.applyLabel') }}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
       </button>
     </div>
 
@@ -365,7 +368,11 @@ function onApply() {
   font-size: 13px;
   font-weight: 700;
   min-width: 64px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1;
   cursor: pointer;
 }
 

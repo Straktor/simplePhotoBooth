@@ -36,6 +36,7 @@ export default {
     title: 'Design Your Theme',
     subtitle: 'Changes apply live',
     apply: 'Apply →',
+    applyLabel: 'Apply',
     preview: 'Preview',
     colors: 'Colors',
     copyFromPreset: 'Copy colors from preset',

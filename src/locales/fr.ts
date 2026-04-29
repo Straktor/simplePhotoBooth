@@ -36,6 +36,7 @@ export default {
     title: 'Personnaliser le thème',
     subtitle: 'Modifications en temps réel',
     apply: 'Appliquer →',
+    applyLabel: 'Appliquer',
     preview: 'Aperçu',
     colors: 'Couleurs',
     copyFromPreset: "Copier les couleurs d'un thème",
