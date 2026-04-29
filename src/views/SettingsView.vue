@@ -186,9 +186,9 @@ const LANGUAGES = [
               <ThemeIcon theme-key="custom" :primary="activeCfg.primary" :accent="activeCfg.accent" :size="16" />
             </div>
           </div>
-          <div class="tc-bottom" :style="{ borderTop: `1px solid rgba(255,255,255,0.08)`, background: '#1a1a2e' }">
-            <div class="tc-name" style="color:#ccc">{{ t('settings.themeCustom') }}</div>
-            <div class="tc-edit-hint">{{ t('settings.themeEdit') }}</div>
+          <div class="tc-bottom" :style="{ borderTop: `1px solid ${t2.border}`, background: t2.surface }">
+            <div class="tc-name" :style="{ color: activeKey === 'custom' ? activeCfg.accent : t2.text }">{{ t('settings.themeCustom') }}</div>
+            <div class="tc-edit-hint" :style="{ color: t2.textMuted }">{{ t('settings.themeEdit') }}</div>
           </div>
           <div v-if="activeKey === 'custom'" class="tc-check" :style="{ background: activeCfg.accent }">
             <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -489,8 +489,7 @@ const LANGUAGES = [
 }
 .tc-edit-hint {
   font-size: 7px;
-  opacity: 0.4;
-  color: #ddd;
+  opacity: 0.7;
 }
 .tc-check {
   position: absolute;
