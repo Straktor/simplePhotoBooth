@@ -90,14 +90,6 @@ defineProps<{ themeKey: string; primary: string; accent: string; size?: number }
     <line x1="2" y1="13" x2="20" y2="13" :stroke="accent" stroke-width="1.5" stroke-linecap="round"/>
   </svg>
 
-  <!-- july4: star with burst -->
-  <svg v-else-if="themeKey === 'july4'" :width="size ?? 26" :height="size ?? 26" viewBox="0 0 30 30" fill="none" stroke-linecap="round">
-    <template v-for="(a, i) in [0, 45, 90, 135, 180, 225, 270, 315]" :key="a">
-      <line x1="15" y1="15" :x2="15 + 12 * Math.cos(a * Math.PI / 180)" :y2="15 + 12 * Math.sin(a * Math.PI / 180)" :stroke="i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? primary : accent" stroke-width="1.8"/>
-    </template>
-    <circle cx="15" cy="15" r="3.5" :fill="primary" stroke="none"/>
-  </svg>
-
   <!-- stpatrick: shamrock -->
   <svg v-else-if="themeKey === 'stpatrick'" :width="size ?? 26" :height="(size ?? 26) * 38/30" viewBox="0 0 30 38" fill="none">
     <circle cx="11" cy="13" r="8" :fill="primary" opacity="0.3" :stroke="primary" stroke-width="1.5"/>
@@ -105,12 +97,6 @@ defineProps<{ themeKey: string; primary: string; accent: string; size?: number }
     <circle cx="15" cy="6"  r="8" :fill="accent"  opacity="0.35" :stroke="accent"  stroke-width="1.5"/>
     <rect x="14" y="21" width="2.5" height="13" rx="1.25" :fill="primary" stroke="none"/>
     <ellipse cx="12" cy="34" rx="5" ry="2" :fill="primary" opacity="0.4" stroke="none"/>
-  </svg>
-
-  <!-- hanukkah: Star of David (two triangles) -->
-  <svg v-else-if="themeKey === 'hanukkah'" :width="size ?? 26" :height="size ?? 26" viewBox="0 0 30 30" fill="none" :stroke="primary" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <polygon points="15,3 27,24 3,24" opacity="0.9" :fill="primary" fill-opacity="0.15"/>
-    <polygon points="15,27 3,6 27,6"  opacity="0.9" :fill="accent"  fill-opacity="0.2" :stroke="accent"/>
   </svg>
 
   <!-- birthday: balloon -->
