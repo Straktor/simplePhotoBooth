@@ -10,6 +10,7 @@ const props = defineProps<{
   appTitle: string
   countdownDuration: number
   mirrorPreview: boolean
+  darkMode: boolean
 }>()
 
 const emit = defineEmits<{
@@ -19,12 +20,14 @@ const emit = defineEmits<{
   updateTitle: [title: string]
   updateCountdown: [dur: number]
   updateMirror: [val: boolean]
+  updateDarkMode: [val: boolean]
 }>()
 
-const t = computed(() => resolveTheme(props.activeKey, props.customCfg))
+const t = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode))
 
-const coreThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p.group === 'Core'))
-const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p.group === 'Holidays'))
+const mode = computed<'dark' | 'light'>(() => props.darkMode ? 'dark' : 'light')
+const coreThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p.dark.group === 'Core'))
+const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p.dark.group === 'Holidays'))
 </script>
 
 <template>
@@ -35,6 +38,44 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
       <span class="title">Settings</span>
+    </div>
+
+    <!-- Appearance -->
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">Appearance</div>
+      <div class="mode-btns">
+        <button
+          class="mode-btn"
+          :style="{
+            border: `1.5px solid ${darkMode ? t.accent : t.border}`,
+            background: darkMode ? t.accent + '22' : 'transparent',
+            color: darkMode ? t.accent : t.textMuted,
+            fontFamily: t.font,
+          }"
+          @click="emit('updateDarkMode', true)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          Dark
+        </button>
+        <button
+          class="mode-btn"
+          :style="{
+            border: `1.5px solid ${!darkMode ? t.accent : t.border}`,
+            background: !darkMode ? t.accent + '22' : 'transparent',
+            color: !darkMode ? t.accent : t.textMuted,
+            fontFamily: t.font,
+          }"
+          @click="emit('updateDarkMode', false)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          Light
+        </button>
+      </div>
     </div>
 
     <!-- App Title -->
@@ -61,19 +102,19 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
           v-for="[k, p] in coreThemes"
           :key="k"
           class="theme-card"
-          :style="{ border: `2px solid ${activeKey === k ? p.accent : 'rgba(255,255,255,0.08)'}` }"
+          :style="{ border: `2px solid ${activeKey === k ? p[mode].accent : 'rgba(128,128,128,0.2)'}` }"
           @click="emit('selectTheme', k)"
         >
-          <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
-            <ThemeIcon :theme-key="k" :primary="p.primary" :accent="p.accent" :size="28" />
+          <div class="tc-preview" :style="{ background: p[mode].cameraBg || p[mode].bg }">
+            <ThemeIcon :theme-key="k" :primary="p[mode].primary" :accent="p[mode].accent" :size="28" />
           </div>
-          <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
+          <div class="tc-footer" :style="{ background: p[mode].surfaceSolid || p[mode].bg, borderTop: `1px solid ${p[mode].border}` }">
             <div class="tc-swatches-row">
-              <div v-for="(c, i) in [p.primary, p.accent]" :key="i" class="tc-dot" :style="{ background: c }" />
+              <div v-for="(c, i) in [p[mode].primary, p[mode].accent]" :key="i" class="tc-dot" :style="{ background: c }" />
             </div>
-            <div class="tc-label" :style="{ color: p.text }">{{ p.label }}</div>
+            <div class="tc-label" :style="{ color: p[mode].text }">{{ p[mode].label }}</div>
           </div>
-          <div v-if="activeKey === k" class="tc-check" :style="{ background: p.accent }">
+          <div v-if="activeKey === k" class="tc-check" :style="{ background: p[mode].accent }">
             <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>
@@ -88,19 +129,19 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
           v-for="[k, p] in holidayThemes"
           :key="k"
           class="theme-card"
-          :style="{ border: `2px solid ${activeKey === k ? p.accent : 'rgba(255,255,255,0.08)'}` }"
+          :style="{ border: `2px solid ${activeKey === k ? p[mode].accent : 'rgba(128,128,128,0.2)'}` }"
           @click="emit('selectTheme', k)"
         >
-          <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
-            <ThemeIcon :theme-key="k" :primary="p.primary" :accent="p.accent" :size="28" />
+          <div class="tc-preview" :style="{ background: p[mode].cameraBg || p[mode].bg }">
+            <ThemeIcon :theme-key="k" :primary="p[mode].primary" :accent="p[mode].accent" :size="28" />
           </div>
-          <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
+          <div class="tc-footer" :style="{ background: p[mode].surfaceSolid || p[mode].bg, borderTop: `1px solid ${p[mode].border}` }">
             <div class="tc-swatches-row">
-              <div v-for="(c, i) in [p.primary, p.accent]" :key="i" class="tc-dot" :style="{ background: c }" />
+              <div v-for="(c, i) in [p[mode].primary, p[mode].accent]" :key="i" class="tc-dot" :style="{ background: c }" />
             </div>
-            <div class="tc-label" :style="{ color: p.text }">{{ p.label }}</div>
+            <div class="tc-label" :style="{ color: p[mode].text }">{{ p[mode].label }}</div>
           </div>
-          <div v-if="activeKey === k" class="tc-check" :style="{ background: p.accent }">
+          <div v-if="activeKey === k" class="tc-check" :style="{ background: p[mode].accent }">
             <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>
@@ -308,6 +349,22 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
   transition: left 0.2s;
 }
 
+.mode-btns {
+  display: flex;
+  gap: 8px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 11px 0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s;
+}
 .countdown-btns {
   display: flex;
   gap: 8px;

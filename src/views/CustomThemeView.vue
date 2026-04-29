@@ -146,14 +146,14 @@ function onApply() {
         v-for="([k, pr]) in Object.entries(PRESETS)"
         :key="k"
         class="preset-swatch-btn"
-        :title="pr.label"
-        @click="patch({ primary: pr.primary, accent: pr.accent, bg: pr.bg })"
+        :title="pr.dark.label"
+        @click="patch({ primary: pr.dark.primary, accent: pr.dark.accent, bg: pr.dark.bg })"
       >
         <div class="preset-swatch" :style="{ border: `1.5px solid ${border}` }">
-          <div :style="{ width:'100%', height:'55%', background: pr.primary }" />
-          <div :style="{ width:'100%', height:'45%', background: pr.accent }" />
+          <div :style="{ width:'100%', height:'55%', background: pr.dark.primary }" />
+          <div :style="{ width:'100%', height:'45%', background: pr.dark.accent }" />
         </div>
-        <div>{{ pr.emoji }}</div>
+        <div>{{ pr.dark.emoji }}</div>
       </button>
     </div>
 

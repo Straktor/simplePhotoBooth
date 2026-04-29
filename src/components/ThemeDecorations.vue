@@ -3,9 +3,13 @@ import { computed } from 'vue'
 import { THEME_DECOS } from '@/themes'
 import type { DecoDef } from '@/themes'
 
-const props = defineProps<{ themeKey: string }>()
+const props = defineProps<{ themeKey: string; darkMode: boolean }>()
 
 const decos = computed<DecoDef[]>(() => THEME_DECOS[props.themeKey] ?? [])
+
+function dc(d: DecoDef) {
+  return !props.darkMode && d.lightColor ? d.lightColor : d.color
+}
 </script>
 
 <template>
@@ -34,24 +38,24 @@ const decos = computed<DecoDef[]>(() => THEME_DECOS[props.themeKey] ?? [])
       <!-- snowflake -->
       <svg v-else-if="d.type === 'snowflake'" :width="d.size" :height="d.size" viewBox="0 0 30 30">
         <template v-for="a in [0, 60, 120]" :key="a">
-          <line :x1="15" :y1="15" :x2="15 + 11 * Math.cos(a * Math.PI / 180)" :y2="15 + 11 * Math.sin(a * Math.PI / 180)" :stroke="d.color" stroke-width="2" stroke-linecap="round"/>
-          <line :x1="15" :y1="15" :x2="15 - 11 * Math.cos(a * Math.PI / 180)" :y2="15 - 11 * Math.sin(a * Math.PI / 180)" :stroke="d.color" stroke-width="2" stroke-linecap="round"/>
+          <line :x1="15" :y1="15" :x2="15 + 11 * Math.cos(a * Math.PI / 180)" :y2="15 + 11 * Math.sin(a * Math.PI / 180)" :stroke="dc(d)" stroke-width="2" stroke-linecap="round"/>
+          <line :x1="15" :y1="15" :x2="15 - 11 * Math.cos(a * Math.PI / 180)" :y2="15 - 11 * Math.sin(a * Math.PI / 180)" :stroke="dc(d)" stroke-width="2" stroke-linecap="round"/>
           <line
             :x1="(15 + 15 + 11 * Math.cos(a * Math.PI / 180)) / 2 - 0.5"
             :y1="(15 + 15 + 11 * Math.sin(a * Math.PI / 180)) / 2 - 0.5"
             :x2="(15 + 15 + 11 * Math.cos(a * Math.PI / 180)) / 2 + 3 * Math.cos((a + 90) * Math.PI / 180)"
             :y2="(15 + 15 + 11 * Math.sin(a * Math.PI / 180)) / 2 + 3 * Math.sin((a + 90) * Math.PI / 180)"
-            :stroke="d.color" stroke-width="1.3" stroke-linecap="round"
+            :stroke="dc(d)" stroke-width="1.3" stroke-linecap="round"
           />
           <line
             :x1="(15 + 15 + 11 * Math.cos(a * Math.PI / 180)) / 2 - 0.5"
             :y1="(15 + 15 + 11 * Math.sin(a * Math.PI / 180)) / 2 - 0.5"
             :x2="(15 + 15 + 11 * Math.cos(a * Math.PI / 180)) / 2 - 3 * Math.cos((a + 90) * Math.PI / 180)"
             :y2="(15 + 15 + 11 * Math.sin(a * Math.PI / 180)) / 2 - 3 * Math.sin((a + 90) * Math.PI / 180)"
-            :stroke="d.color" stroke-width="1.3" stroke-linecap="round"
+            :stroke="dc(d)" stroke-width="1.3" stroke-linecap="round"
           />
         </template>
-        <circle cx="15" cy="15" r="2.5" :fill="d.color"/>
+        <circle cx="15" cy="15" r="2.5" :fill="dc(d)"/>
       </svg>
 
       <!-- heart -->

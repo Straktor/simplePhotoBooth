@@ -7,6 +7,7 @@ export interface AppSettings {
   appTitle: string
   countdownDuration: number
   mirrorPreview: boolean
+  darkMode: boolean
   capturedPhotos: string[]
 }
 
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   appTitle: 'Simple Photo Booth',
   countdownDuration: 3,
   mirrorPreview: true,
+  darkMode: true,
   capturedPhotos: [],
 }
 
