@@ -236,7 +236,7 @@ const galleryTheme = computed(() => t.value)
         </button>
 
         <!-- Countdown overlay -->
-        <div v-if="countdown !== null" class="countdown-overlay" @click="cancelCountdown">
+        <div v-if="isRunning" class="countdown-overlay" @click="cancelCountdown">
           <div
             :key="countdown"
             class="countdown-num"
