@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PRESETS, GRADIENTS } from '@/themes'
+import { GRADIENTS } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
 
 const { t } = useI18n()
@@ -154,25 +154,6 @@ function onApply() {
             @input="(e) => patch({ [item.key]: (e.target as HTMLInputElement).value } as any)"
           />
         </label>
-      </div>
-
-      <!-- COPY FROM PRESET -->
-      <div class="section-label" :style="{ color: textMuted }">{{ t('customTheme.copyFromPreset') }}</div>
-      <div class="presets-scroll">
-        <button
-          v-for="([k, pr]) in Object.entries(PRESETS)"
-          :key="k"
-          class="preset-btn"
-          :style="{ border: `1.5px solid ${borderClr}`, background: surface }"
-          :title="pr.dark.label"
-          @click="patch({ primary: pr.dark.primary, accent: pr.dark.accent, bg: pr.dark.bg })"
-        >
-          <div class="preset-preview">
-            <div :style="{ flex: 1, background: pr.dark.primary }" />
-            <div :style="{ flex: 1, background: pr.dark.accent }" />
-          </div>
-          <span class="preset-emoji">{{ pr.dark.emoji }}</span>
-        </button>
       </div>
 
       <!-- BACKGROUND -->
@@ -460,36 +441,6 @@ function onApply() {
   width: 0;
   height: 0;
   position: absolute;
-}
-
-/* ── Presets scroll ── */
-.presets-scroll {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 4px 2px 8px;
-  -webkit-overflow-scrolling: touch;
-}
-.presets-scroll::-webkit-scrollbar { display: none; }
-.preset-btn {
-  flex-shrink: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  width: 52px;
-  cursor: pointer;
-  transition: transform 0.15s;
-}
-.preset-btn:active { transform: scale(0.92); }
-.preset-preview {
-  display: flex;
-  flex-direction: column;
-  height: 38px;
-}
-.preset-emoji {
-  display: block;
-  text-align: center;
-  font-size: 14px;
-  padding: 4px 0 5px;
 }
 
 /* ── Background type segmented ── */
