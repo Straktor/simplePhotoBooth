@@ -46,27 +46,14 @@ defineProps<{ themeKey: string; primary: string; accent: string; size?: number }
     <path d="M10.5 24.5 Q16 28 21.5 24.5" :stroke="accent" stroke-width="1.5" fill="none"/>
   </svg>
 
-  <!-- christmas: snowflake -->
-  <svg v-else-if="themeKey === 'christmas'" :width="size ?? 26" :height="size ?? 26" viewBox="0 0 30 30" fill="none" stroke-linecap="round">
-    <template v-for="a in [0, 60, 120]" :key="a">
-      <line :x1="15" :y1="15" :x2="15 + 12 * Math.cos(a * Math.PI / 180)" :y2="15 + 12 * Math.sin(a * Math.PI / 180)" :stroke="primary" stroke-width="1.8"/>
-      <line :x1="15" :y1="15" :x2="15 - 12 * Math.cos(a * Math.PI / 180)" :y2="15 - 12 * Math.sin(a * Math.PI / 180)" :stroke="primary" stroke-width="1.8"/>
-      <line
-        :x1="(15 + 15 + 12 * Math.cos(a * Math.PI / 180)) / 2"
-        :y1="(15 + 15 + 12 * Math.sin(a * Math.PI / 180)) / 2"
-        :x2="(15 + 15 + 12 * Math.cos(a * Math.PI / 180)) / 2 + 3.5 * Math.cos((a + 90) * Math.PI / 180)"
-        :y2="(15 + 15 + 12 * Math.sin(a * Math.PI / 180)) / 2 + 3.5 * Math.sin((a + 90) * Math.PI / 180)"
-        :stroke="accent" stroke-width="1.3"
-      />
-      <line
-        :x1="(15 + 15 + 12 * Math.cos(a * Math.PI / 180)) / 2"
-        :y1="(15 + 15 + 12 * Math.sin(a * Math.PI / 180)) / 2"
-        :x2="(15 + 15 + 12 * Math.cos(a * Math.PI / 180)) / 2 - 3.5 * Math.cos((a + 90) * Math.PI / 180)"
-        :y2="(15 + 15 + 12 * Math.sin(a * Math.PI / 180)) / 2 - 3.5 * Math.sin((a + 90) * Math.PI / 180)"
-        :stroke="accent" stroke-width="1.3"
-      />
-    </template>
-    <circle cx="15" cy="15" r="2.8" :fill="accent" stroke="none"/>
+  <!-- christmas: tree with star -->
+  <svg v-else-if="themeKey === 'christmas'" :width="size ?? 26" :height="(size ?? 26) * 32/30" viewBox="0 0 30 32" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="15,0.7 15.71,2.53 17.66,2.64 16.14,3.87 16.64,5.77 15,4.7 13.36,5.77 13.86,3.87 12.34,2.64 14.29,2.53" :fill="accent" stroke="none"/>
+    <polygon points="15,6.5 27.5,27 2.5,27" :fill="primary" opacity="0.25" :stroke="primary" stroke-width="1.5"/>
+    <circle cx="11.5" cy="17" r="1.8" :fill="accent" stroke="none"/>
+    <circle cx="18.5" cy="17" r="1.8" :fill="accent" stroke="none"/>
+    <circle cx="15" cy="22" r="1.8" :fill="accent" opacity="0.7" stroke="none"/>
+    <rect x="12.5" y="27" width="5" height="4" rx="1" :fill="primary" opacity="0.6" stroke="none"/>
   </svg>
 
   <!-- valentine: heart -->
