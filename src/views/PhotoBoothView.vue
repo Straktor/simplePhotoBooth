@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useCamera } from '@/composables/useCamera'
 import { useCountdown } from '@/composables/useCountdown'
 import { useSettings } from '@/composables/useSettings'
-import { resolveTheme, PRESETS } from '@/themes'
+import { resolveTheme } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
 import ThemeDecorations from '@/components/ThemeDecorations.vue'
 import SettingsView from '@/views/SettingsView.vue'
@@ -210,16 +210,6 @@ const galleryTheme = computed(() => t.value)
             playsinline
             muted
           />
-        </div>
-
-        <!-- Camera label -->
-        <div class="cam-label">
-          {{ isFront ? '● Front Camera' : '● Rear Camera' }}
-        </div>
-
-        <!-- Theme badge -->
-        <div class="theme-badge" :style="{ color: t.accent, border: `1px solid ${t.accent}44` }">
-          {{ (PRESETS[activeKey]?.emoji ?? '✏️') }} {{ PRESETS[activeKey]?.label ?? 'Custom' }}
         </div>
 
         <!-- Start camera overlay -->
