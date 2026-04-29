@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { PRESETS, resolveTheme } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
+import ThemeIcon from '@/components/ThemeIcon.vue'
 
 const props = defineProps<{
   activeKey: string
@@ -64,10 +65,7 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
           @click="emit('selectTheme', k)"
         >
           <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
-            <svg class="tc-camera-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" :stroke="p.primary" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4" :stroke="p.accent"/>
-            </svg>
+            <ThemeIcon :theme-key="k" :primary="p.primary" :accent="p.accent" :size="28" />
           </div>
           <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
             <div class="tc-swatches-row">
@@ -94,10 +92,7 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
           @click="emit('selectTheme', k)"
         >
           <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
-            <svg class="tc-camera-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" :stroke="p.primary" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4" :stroke="p.accent"/>
-            </svg>
+            <ThemeIcon :theme-key="k" :primary="p.primary" :accent="p.accent" :size="28" />
           </div>
           <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
             <div class="tc-swatches-row">
@@ -127,10 +122,7 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
             }"
           >
             <div class="tc-pencil" :style="{ background: customCfg.primary + '55', border: `1.5px solid ${customCfg.accent}` }">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" :stroke="customCfg.accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
+              <ThemeIcon theme-key="custom" :primary="customCfg.primary" :accent="customCfg.accent" :size="18" />
             </div>
           </div>
           <div class="tc-footer" style="background:#1a1a2e;border-top:1px solid rgba(255,255,255,0.08)">
