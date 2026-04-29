@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useCamera } from '@/composables/useCamera'
 import { useCountdown } from '@/composables/useCountdown'
 import { useSettings } from '@/composables/useSettings'
-import { resolveTheme } from '@/themes'
+import { resolveTheme, FONTS } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
 import ThemeDecorations from '@/components/ThemeDecorations.vue'
 import SettingsView from '@/views/SettingsView.vue'
@@ -29,7 +29,8 @@ const { count: countdown, isRunning, start: startCountdown, cancel: cancelCountd
 
 const activeKey = computed(() => settings.activeThemeKey)
 const customCfg = computed(() => settings.customThemeCfg)
-const t = computed(() => resolveTheme(activeKey.value, customCfg.value, settings.darkMode))
+const fontCss = computed(() => FONTS.find(f => f.key === settings.fontFamily)?.css)
+const t = computed(() => resolveTheme(activeKey.value, customCfg.value, settings.darkMode, fontCss.value))
 
 const bgImage = computed(() =>
   activeKey.value === 'custom' ? customCfg.value.bgImage : null
@@ -98,6 +99,7 @@ const galleryTheme = computed(() => t.value)
     :countdown-duration="settings.countdownDuration"
     :mirror-preview="settings.mirrorPreview"
     :dark-mode="settings.darkMode"
+    :font-family="settings.fontFamily"
     @back="screen = 'booth'"
     @select-theme="handleSelectTheme"
     @edit-custom="screen = 'customTheme'"
@@ -105,6 +107,7 @@ const galleryTheme = computed(() => t.value)
     @update-countdown="(v) => update({ countdownDuration: v })"
     @update-mirror="(v) => update({ mirrorPreview: v })"
     @update-dark-mode="(v) => update({ darkMode: v })"
+    @update-font="(v) => update({ fontFamily: v })"
     @reset="reset"
   />
 

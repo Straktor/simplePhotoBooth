@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { PRESETS, resolveTheme } from '@/themes'
+import { PRESETS, FONTS, resolveTheme } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
 import ThemeIcon from '@/components/ThemeIcon.vue'
 
@@ -11,6 +11,7 @@ const props = defineProps<{
   countdownDuration: number
   mirrorPreview: boolean
   darkMode: boolean
+  fontFamily: string
 }>()
 
 const emit = defineEmits<{
@@ -21,10 +22,12 @@ const emit = defineEmits<{
   updateCountdown: [dur: number]
   updateMirror: [val: boolean]
   updateDarkMode: [val: boolean]
+  updateFont: [key: string]
   reset: []
 }>()
 
-const t = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode))
+const fontCss = computed(() => FONTS.find(f => f.key === props.fontFamily)?.css)
+const t = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode, fontCss.value))
 
 const mode = computed<'dark' | 'light'>(() => props.darkMode ? 'dark' : 'light')
 const allThemes = computed(() => Object.entries(PRESETS))
@@ -75,6 +78,25 @@ const allThemes = computed(() => Object.entries(PRESETS))
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           Dark
         </button>
+      </div>
+    </div>
+
+    <!-- Font -->
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">Font</div>
+      <div class="font-btns">
+        <button
+          v-for="f in FONTS"
+          :key="f.key"
+          class="font-btn"
+          :style="{
+            border: `1.5px solid ${fontFamily === f.key ? t.accent : t.border}`,
+            background: fontFamily === f.key ? t.accent + '22' : t.surface,
+            color: fontFamily === f.key ? t.accent : t.text,
+            fontFamily: f.css,
+          }"
+          @click="emit('updateFont', f.key)"
+        >{{ f.label }}</button>
       </div>
     </div>
 
@@ -331,6 +353,19 @@ const allThemes = computed(() => Object.entries(PRESETS))
   transition: left 0.2s;
 }
 
+.font-btns {
+  display: flex;
+  gap: 8px;
+}
+.font-btn {
+  flex: 1;
+  padding: 10px 4px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.18s;
+  backdrop-filter: blur(10px);
+}
 .mode-btns {
   display: flex;
   gap: 8px;

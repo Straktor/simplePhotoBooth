@@ -8,6 +8,7 @@ export interface AppSettings {
   countdownDuration: number
   mirrorPreview: boolean
   darkMode: boolean
+  fontFamily: string
   capturedPhotos: string[]
 }
 
@@ -20,6 +21,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   countdownDuration: 3,
   mirrorPreview: true,
   darkMode: false,
+  fontFamily: 'system',
   capturedPhotos: [],
 }
 

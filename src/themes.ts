@@ -186,6 +186,13 @@ export interface CustomThemeCfg {
   bgImage: string | null
 }
 
+export const FONTS = [
+  { key: 'system', label: 'System', css: 'system-ui,-apple-system,sans-serif' },
+  { key: 'sans',   label: 'Sans',   css: '"Helvetica Neue",Helvetica,Arial,sans-serif' },
+  { key: 'serif',  label: 'Serif',  css: 'Georgia,"Times New Roman",serif' },
+  { key: 'mono',   label: 'Mono',   css: '"SF Mono","Fira Code","Courier New",monospace' },
+]
+
 export const GRADIENTS = [
   { label:'None',     value: null },
   { label:'Bokeh',    value:'radial-gradient(circle at 20% 30%,rgba(180,100,255,0.65),transparent 42%),radial-gradient(circle at 80% 70%,rgba(100,180,255,0.55),transparent 42%)' },
@@ -197,7 +204,7 @@ export const GRADIENTS = [
   { label:'Dusk',     value:'linear-gradient(160deg,#1a0a2a,#3a1a4a 50%,#ff8c44)' },
 ]
 
-export function resolveTheme(activeKey: string, customCfg: CustomThemeCfg, darkMode: boolean): ResolvedTheme {
+export function resolveTheme(activeKey: string, customCfg: CustomThemeCfg, darkMode: boolean, fontOverride?: string): ResolvedTheme {
   if (activeKey === 'custom') {
     const { primary, accent, bg, bgImage } = customCfg
     return {
@@ -218,7 +225,9 @@ export function resolveTheme(activeKey: string, customCfg: CustomThemeCfg, darkM
       bgImage,
       scanlines: false,
       darkFrame: true,
+      ...(fontOverride ? { font: fontOverride } : {}),
     }
   }
-  return PRESETS[activeKey]?.[darkMode ? 'dark' : 'light'] ?? PRESETS.neon.dark
+  const base = PRESETS[activeKey]?.[darkMode ? 'dark' : 'light'] ?? PRESETS.neon.dark
+  return fontOverride ? { ...base, font: fontOverride } : base
 }
