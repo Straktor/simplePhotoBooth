@@ -138,14 +138,6 @@ const galleryTheme = computed(() => t.value)
         >{{ settings.appTitle || 'Simple Photo Booth' }}</span>
       </div>
       <div class="topbar-actions">
-        <button class="icon-btn" :style="iconBtnStyle" @click="handleFlip">
-          <!-- camera flip -->
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 7h-9"/><path d="M14 17H5"/>
-            <polyline points="15 4 20 7 15 10"/>
-            <polyline points="9 20 4 17 9 14"/>
-          </svg>
-        </button>
         <button class="icon-btn" :style="iconBtnStyle" @click="screen = 'settings'">
           <!-- sliders / settings -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -229,19 +221,26 @@ const galleryTheme = computed(() => t.value)
           <button class="retry-btn" :style="{ background: t.accent }" @click="startCamera">Retry</button>
         </div>
 
-        <!-- Fullscreen toggle — top-right in fullscreen, bottom-right otherwise -->
-        <button class="fs-btn" :class="isFullscreen ? 'fs-btn--top' : 'fs-btn--bottom'" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
-          <!-- minimize-2 when fullscreen -->
-          <svg v-if="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
-            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
-          </svg>
-          <!-- maximize-2 otherwise -->
-          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
-            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
-          </svg>
-        </button>
+        <!-- Flip + Fullscreen button group -->
+        <div class="vf-btn-group" :class="isFullscreen ? 'vf-btn-group--top' : 'vf-btn-group--bottom'">
+          <button class="fs-btn" :style="fsBtnStyle" @click="handleFlip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 7h-9"/><path d="M14 17H5"/>
+              <polyline points="15 4 20 7 15 10"/>
+              <polyline points="9 20 4 17 9 14"/>
+            </svg>
+          </button>
+          <button class="fs-btn" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
+            <svg v-if="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+              <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+            </svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+          </button>
+        </div>
 
         <!-- Countdown overlay -->
         <div v-if="isRunning" class="countdown-overlay" @click="cancelCountdown">
@@ -508,10 +507,16 @@ const galleryTheme = computed(() => t.value)
   letter-spacing: 0.4px;
   z-index: 5;
 }
-.fs-btn {
+.vf-btn-group {
   position: absolute;
   right: 14px;
   z-index: 25;
+  display: flex;
+  gap: 6px;
+}
+.vf-btn-group--bottom { bottom: 14px; }
+.vf-btn-group--top    { top: 14px; }
+.fs-btn {
   width: 34px; height: 34px;
   border-radius: 9px;
   backdrop-filter: blur(10px);
@@ -519,8 +524,6 @@ const galleryTheme = computed(() => t.value)
   align-items: center;
   justify-content: center;
 }
-.fs-btn--bottom { bottom: 14px; }
-.fs-btn--top    { top: 14px; }
 
 /* Start / error overlays */
 .start-overlay, .error-overlay {
