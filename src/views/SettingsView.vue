@@ -30,7 +30,9 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
   <div class="settings" :style="{ background: t.bg, color: t.text, fontFamily: t.font }">
     <!-- Header -->
     <div class="header" :style="{ background: t.bg, borderBottom: `1px solid ${t.border}` }">
-      <button class="back-btn" :style="{ color: t.primary }" @click="emit('back')">←</button>
+      <button class="back-btn" :style="{ color: t.primary }" @click="emit('back')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
       <span class="title">Settings</span>
     </div>
 

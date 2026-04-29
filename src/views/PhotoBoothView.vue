@@ -39,6 +39,16 @@ const mirrorStyle = computed(() =>
   (settings.mirrorPreview && isFront.value) ? 'scaleX(-1)' : 'none'
 )
 
+const iconBtnStyle = computed(() => t.value.darkFrame
+  ? { background: 'rgba(0,0,0,0.32)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.88)' }
+  : { background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.08)', color: 'rgba(0,0,0,0.75)' }
+)
+
+const fsBtnStyle = computed(() => t.value.darkFrame
+  ? { background: 'rgba(0,0,0,0.38)', border: '1px solid rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.88)' }
+  : { background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.75)' }
+)
+
 onMounted(() => startCamera())
 
 async function handleShoot() {
@@ -128,16 +138,23 @@ const galleryTheme = computed(() => t.value)
         >{{ settings.appTitle || 'Simple Photo Booth' }}</span>
       </div>
       <div class="topbar-actions">
-        <button class="icon-btn" @click="handleFlip">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        <button class="icon-btn" :style="iconBtnStyle" @click="handleFlip">
+          <!-- camera flip -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 7h-9"/><path d="M14 17H5"/>
+            <polyline points="15 4 20 7 15 10"/>
+            <polyline points="9 20 4 17 9 14"/>
           </svg>
         </button>
-        <button class="icon-btn" @click="screen = 'settings'">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        <button class="icon-btn" :style="iconBtnStyle" @click="screen = 'settings'">
+          <!-- sliders / settings -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="18" x2="20" y2="18"/>
+            <circle cx="8"  cy="6"  r="2" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/>
           </svg>
         </button>
       </div>
@@ -223,14 +240,16 @@ const galleryTheme = computed(() => t.value)
         </div>
 
         <!-- Fullscreen toggle -->
-        <button class="fs-btn" @click="isFullscreen = !isFullscreen">
-          <svg v-if="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
-            <path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
+        <button class="fs-btn" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
+          <!-- minimize-2 when fullscreen -->
+          <svg v-if="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
           </svg>
-          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <path d="M3 8V5a2 2 0 0 1 2-2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/>
-            <path d="M21 16v3a2 2 0 0 1-2 2h-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/>
+          <!-- maximize-2 otherwise -->
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
           </svg>
         </button>
 
@@ -264,7 +283,7 @@ const galleryTheme = computed(() => t.value)
           <img v-if="previewDataUrl" :src="previewDataUrl" class="thumb-img" alt="last" />
           <div v-else class="thumb-empty" :style="{ background: t.surface }">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="t.textMuted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
               <polyline points="21 15 16 10 5 21"/>
             </svg>
@@ -390,10 +409,6 @@ const galleryTheme = computed(() => t.value)
 .icon-btn {
   width: 40px; height: 40px;
   border-radius: 12px;
-  background: rgba(0,0,0,0.28);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(255,255,255,0.9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -509,10 +524,7 @@ const galleryTheme = computed(() => t.value)
   z-index: 15;
   width: 34px; height: 34px;
   border-radius: 9px;
-  background: rgba(0,0,0,0.38);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.88);
   display: flex;
   align-items: center;
   justify-content: center;

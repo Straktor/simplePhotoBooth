@@ -21,7 +21,9 @@ function downloadPhoto(dataUrl: string, index: number) {
 <template>
   <div class="gallery" :style="{ background: t.bg, color: t.text, fontFamily: t.font }">
     <div class="header" :style="{ borderBottom: `1px solid ${t.border}`, background: t.bg }">
-      <button class="back-btn" :style="{ color: t.primary }" @click="emit('back')">←</button>
+      <button class="back-btn" :style="{ color: t.primary }" @click="emit('back')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
       <span class="title">Gallery</span>
       <span class="count" :style="{ color: t.textMuted }">{{ photos.length }} photo{{ photos.length !== 1 ? 's' : '' }}</span>
     </div>

@@ -71,7 +71,9 @@ function onApply() {
 
     <!-- Header -->
     <div class="header" :style="{ borderBottom: `1px solid ${border}`, background: bg }">
-      <button class="back-btn" :style="{ color: p }" @click="emit('back')">←</button>
+      <button class="back-btn" :style="{ color: p }" @click="emit('back')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
       <div>
         <div class="header-title">Design Your Theme</div>
         <div class="header-sub" :style="{ color: p + '88' }">Changes apply live</div>
