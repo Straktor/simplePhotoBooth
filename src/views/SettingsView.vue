@@ -266,11 +266,16 @@ const allThemes = computed(() => Object.entries(PRESETS))
   gap: 4px;
   font-size: 15px;
   font-weight: 500;
+  line-height: 1;
   background: none;
   border: none;
   cursor: pointer;
   padding: 4px 0;
   width: 64px;
+}
+.back-btn svg {
+  display: block;
+  flex-shrink: 0;
 }
 .hdr-title {
   font-size: 17px;
