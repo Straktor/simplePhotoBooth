@@ -309,20 +309,19 @@ const galleryTheme = computed(() => t.value)
         <div class="shutter-inner" />
       </button>
 
-      <div class="timer-stack">
-        <button
-          v-for="s in [3, 5, 10]"
-          :key="s"
-          class="timer-btn"
-          :style="{
-            background: settings.countdownDuration === s ? t.primary : t.surface,
-            border: `1px solid ${settings.countdownDuration === s ? t.primary : t.border}`,
-            color: settings.countdownDuration === s ? '#fff' : t.textMuted,
-            fontFamily: t.font,
-          }"
-          @click="update({ countdownDuration: s })"
-        >{{ s }}s</button>
-      </div>
+      <select
+        class="timer-select"
+        :value="settings.countdownDuration"
+        :style="{
+          background: t.surface,
+          border: `1px solid ${t.border}`,
+          color: t.text,
+          fontFamily: t.font,
+        }"
+        @change="update({ countdownDuration: +($event.target as HTMLSelectElement).value })"
+      >
+        <option v-for="s in [3, 5, 10]" :key="s" :value="s">{{ s }}s</option>
+      </select>
     </div>
 
     <!-- Bottom controls (fullscreen overlay) -->
@@ -368,20 +367,13 @@ const galleryTheme = computed(() => t.value)
             <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
           </svg>
         </button>
-        <div class="timer-stack">
-          <button
-            v-for="s in [3, 5, 10]"
-            :key="s"
-            class="timer-btn"
-            :style="{
-              background: settings.countdownDuration === s ? t.primary : 'rgba(255,255,255,0.15)',
-              border: `1px solid ${settings.countdownDuration === s ? t.primary : 'rgba(255,255,255,0.2)'}`,
-              color: settings.countdownDuration === s ? '#fff' : 'rgba(255,255,255,0.55)',
-              fontFamily: t.font,
-            }"
-            @click="update({ countdownDuration: s })"
-          >{{ s }}s</button>
-        </div>
+        <select
+          class="timer-select timer-select--fs"
+          :value="settings.countdownDuration"
+          @change="update({ countdownDuration: +($event.target as HTMLSelectElement).value })"
+        >
+          <option v-for="s in [3, 5, 10]" :key="s" :value="s">{{ s }}s</option>
+        </select>
       </div>
     </div>
 
@@ -708,17 +700,21 @@ const galleryTheme = computed(() => t.value)
   backdrop-filter: blur(4px);
 }
 
-.timer-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: center;
-}
-.timer-btn {
-  width: 36px; height: 20px;
+.timer-select {
+  padding: 8px 10px;
   border-radius: 10px;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
-  transition: all 0.18s;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
+  width: 58px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+.timer-select--fs {
+  background: rgba(0,0,0,0.38) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.88) !important;
 }
 </style>
