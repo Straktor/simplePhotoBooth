@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCamera } from '@/composables/useCamera'
 import { useCountdown } from '@/composables/useCountdown'
 import { useSettings } from '@/composables/useSettings'
@@ -12,6 +13,7 @@ import GalleryView from '@/views/GalleryView.vue'
 
 type Screen = 'booth' | 'settings' | 'customTheme' | 'gallery'
 
+const { t } = useI18n()
 const { settings, update, updateCustomTheme, addPhoto, reset } = useSettings()
 
 const screen = ref<Screen>('booth')
@@ -30,7 +32,7 @@ const { count: countdown, isRunning, start: startCountdown, cancel: cancelCountd
 const activeKey = computed(() => settings.activeThemeKey)
 const customCfg = computed(() => settings.customThemeCfg)
 const fontCss = computed(() => FONTS.find(f => f.key === settings.fontFamily)?.css)
-const t = computed(() => resolveTheme(activeKey.value, customCfg.value, settings.darkMode, fontCss.value))
+const theme = computed(() => resolveTheme(activeKey.value, customCfg.value, settings.darkMode, fontCss.value))
 
 const bgImage = computed(() =>
   activeKey.value === 'custom' ? customCfg.value.bgImage : null
@@ -40,12 +42,12 @@ const mirrorStyle = computed(() =>
   (settings.mirrorPreview && isFront.value) ? 'scaleX(-1)' : 'none'
 )
 
-const iconBtnStyle = computed(() => t.value.darkFrame
+const iconBtnStyle = computed(() => theme.value.darkFrame
   ? { background: 'rgba(0,0,0,0.32)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.88)' }
   : { background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.08)', color: 'rgba(0,0,0,0.75)' }
 )
 
-const fsBtnStyle = computed(() => t.value.darkFrame
+const fsBtnStyle = computed(() => theme.value.darkFrame
   ? { background: 'rgba(0,0,0,0.38)', border: '1px solid rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.88)' }
   : { background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.75)' }
 )
@@ -86,7 +88,7 @@ function handleApplyCustom() {
   screen.value = 'booth'
 }
 
-const galleryTheme = computed(() => t.value)
+const galleryTheme = computed(() => theme.value)
 </script>
 
 <template>
@@ -100,6 +102,7 @@ const galleryTheme = computed(() => t.value)
     :mirror-preview="settings.mirrorPreview"
     :dark-mode="settings.darkMode"
     :font-family="settings.fontFamily"
+    :language="settings.language"
     @back="screen = 'booth'"
     @select-theme="handleSelectTheme"
     @edit-custom="screen = 'customTheme'"
@@ -108,6 +111,7 @@ const galleryTheme = computed(() => t.value)
     @update-mirror="(v) => update({ mirrorPreview: v })"
     @update-dark-mode="(v) => update({ darkMode: v })"
     @update-font="(v) => update({ fontFamily: v })"
+    @update-language="(v) => update({ language: v })"
     @reset="reset"
   />
 
@@ -130,7 +134,7 @@ const galleryTheme = computed(() => t.value)
   <div
     v-else
     class="booth"
-    :style="{ background: t.bg, fontFamily: t.font, color: t.text }"
+    :style="{ background: theme.bg, fontFamily: theme.font, color: theme.text }"
   >
     <!-- Decorations -->
     <ThemeDecorations v-if="!isFullscreen" :theme-key="activeKey" :dark-mode="settings.darkMode" />
@@ -140,7 +144,7 @@ const galleryTheme = computed(() => t.value)
       <div class="app-title-wrap">
         <span
           class="app-title"
-          :style="{ backgroundImage: t.titleGradient }"
+          :style="{ backgroundImage: theme.titleGradient }"
         >{{ settings.appTitle || 'Simple Photo Booth' }}</span>
       </div>
       <div class="topbar-actions">
@@ -178,14 +182,14 @@ const galleryTheme = computed(() => t.value)
       <div
         :class="isFullscreen ? 'vf-inner-fs' : 'vf-inner'"
         :style="isFullscreen ? {} : {
-          border: `1.5px solid ${t.viewfinderBorder}`,
+          border: `1.5px solid ${theme.viewfinderBorder}`,
           boxShadow: activeKey === 'neon' ? '0 0 40px rgba(124,111,255,0.1)' : '0 10px 36px rgba(0,0,0,0.3)',
         }"
         @click="!isCameraReady ? startCamera() : undefined"
       >
         <!-- Camera feed -->
         <div class="camera-bg" :style="{
-          background: bgImage ? undefined : t.cameraBg,
+          background: bgImage ? undefined : theme.cameraBg,
           backgroundImage: bgImage ?? undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -193,7 +197,7 @@ const galleryTheme = computed(() => t.value)
           <!-- Blobs -->
           <template v-if="!bgImage">
             <div
-              v-for="(color, i) in t.cameraBlobs"
+              v-for="(color, i) in theme.cameraBlobs"
               :key="i"
               class="camera-blob"
               :style="{
@@ -207,7 +211,7 @@ const galleryTheme = computed(() => t.value)
             />
           </template>
           <!-- Scanlines -->
-          <div v-if="t.scanlines" class="scanlines" />
+          <div v-if="theme.scanlines" class="scanlines" />
           <!-- Vignette -->
           <div class="vignette" />
           <!-- Focus ring -->
@@ -225,19 +229,19 @@ const galleryTheme = computed(() => t.value)
 
         <!-- Start camera overlay -->
         <div v-if="!isCameraReady && !error" class="start-overlay" @click="startCamera">
-          <div class="start-btn" :style="{ background: t.surface, border: `1px solid ${t.border}`, color: t.text }">
+          <div class="start-btn" :style="{ background: theme.surface, border: `1px solid ${theme.border}`, color: theme.text }">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
               <circle cx="12" cy="13" r="4"/>
             </svg>
-            <span>Start Camera</span>
+            <span>{{ t('booth.startCamera') }}</span>
           </div>
         </div>
 
         <!-- Error overlay -->
-        <div v-if="error" class="error-overlay" :style="{ background: t.surface }">
-          <div class="error-text" :style="{ color: t.textMuted }">{{ error }}</div>
-          <button class="retry-btn" :style="{ background: t.accent }" @click="startCamera">Retry</button>
+        <div v-if="error" class="error-overlay" :style="{ background: theme.surface }">
+          <div class="error-text" :style="{ color: theme.textMuted }">{{ error }}</div>
+          <button class="retry-btn" :style="{ background: theme.accent }" @click="startCamera">{{ t('booth.retry') }}</button>
         </div>
 
         <!-- Flip + Fullscreen button group (normal mode only) -->
@@ -266,9 +270,9 @@ const galleryTheme = computed(() => t.value)
           <div
             :key="countdown"
             class="countdown-num"
-            :style="{ color: t.countdownColor, textShadow: `0 0 50px ${t.countdownColor}90`, fontFamily: t.font }"
+            :style="{ color: theme.countdownColor, textShadow: `0 0 50px ${theme.countdownColor}90`, fontFamily: theme.font }"
           >{{ countdown }}</div>
-          <div class="countdown-hint">tap to cancel</div>
+          <div class="countdown-hint">{{ t('booth.tapToCancel') }}</div>
         </div>
 
         <!-- Flash -->
@@ -278,7 +282,7 @@ const galleryTheme = computed(() => t.value)
         <div v-if="showPreview && previewDataUrl" class="preview-wrap">
           <div class="preview-card">
             <img :src="previewDataUrl" class="preview-img" alt="captured" />
-            <div class="preview-label">✓ Saved</div>
+            <div class="preview-label">{{ t('booth.saved') }}</div>
           </div>
         </div>
       </div>
@@ -287,10 +291,10 @@ const galleryTheme = computed(() => t.value)
     <!-- Bottom controls (normal) -->
     <div v-if="!isFullscreen" class="bottom-controls">
       <button class="gallery-thumb-btn" @click="screen = 'gallery'">
-        <div class="gallery-thumb" :style="{ border: `2px solid ${t.borderStrong}` }">
+        <div class="gallery-thumb" :style="{ border: `2px solid ${theme.borderStrong}` }">
           <img v-if="previewDataUrl" :src="previewDataUrl" class="thumb-img" alt="last" />
-          <div v-else class="thumb-empty" :style="{ background: t.surface }">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="t.textMuted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <div v-else class="thumb-empty" :style="{ background: theme.surface }">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" :stroke="theme.textMuted" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
               <polyline points="21 15 16 10 5 21"/>
@@ -302,9 +306,9 @@ const galleryTheme = computed(() => t.value)
       <button
         class="shutter-btn"
         :style="{
-          background: t.accent,
-          boxShadow: t.shutterGlow,
-          '--acc': t.accent,
+          background: theme.accent,
+          boxShadow: theme.shutterGlow,
+          '--acc': theme.accent,
           border: `3.5px solid ${activeKey === 'light' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.85)'}`,
         } as any"
         :disabled="!isCameraReady"
@@ -317,10 +321,10 @@ const galleryTheme = computed(() => t.value)
         class="timer-select"
         :value="settings.countdownDuration"
         :style="{
-          background: t.surface,
-          border: `1px solid ${t.border}`,
-          color: t.text,
-          fontFamily: t.font,
+          background: theme.surface,
+          border: `1px solid ${theme.border}`,
+          color: theme.text,
+          fontFamily: theme.font,
         }"
         @change="update({ countdownDuration: +($event.target as HTMLSelectElement).value })"
       >
@@ -346,9 +350,9 @@ const galleryTheme = computed(() => t.value)
       <button
         class="shutter-btn"
         :style="{
-          background: t.accent,
-          boxShadow: t.shutterGlow,
-          '--acc': t.accent,
+          background: theme.accent,
+          boxShadow: theme.shutterGlow,
+          '--acc': theme.accent,
           border: '3.5px solid rgba(255,255,255,0.85)',
         } as any"
         :disabled="!isCameraReady"

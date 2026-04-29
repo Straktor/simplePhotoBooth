@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { PRESETS, GRADIENTS } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
+
+const { t } = useI18n()
 
 const props = defineProps<{ cfg: CustomThemeCfg }>()
 const emit = defineEmits<{
@@ -40,6 +43,19 @@ function isLightColor(hex: string): boolean {
 const textColor = computed(() => isLightColor(bg.value) ? '#1a1a1a' : '#f0f0f0')
 const muted = computed(() => isLightColor(bg.value) ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.42)')
 
+const colorItems = computed(() => [
+  { key: 'bg',      label: t('customTheme.bgColorLabel'),  desc: t('customTheme.bgColorDesc') },
+  { key: 'primary', label: t('customTheme.primaryLabel'),  desc: t('customTheme.primaryDesc') },
+  { key: 'accent',  label: t('customTheme.accentLabel'),   desc: t('customTheme.accentDesc') },
+])
+
+const bgTabs = computed(() => [
+  ['solid',    t('customTheme.solid')],
+  ['gradient', t('customTheme.gradient')],
+  ['url',      t('customTheme.url')],
+  ['phone',    t('customTheme.cameraRoll')],
+] as [BgMode, string][])
+
 function patch(partial: Partial<CustomThemeCfg>) {
   Object.assign(local.value, partial)
   emit('update', { ...local.value })
@@ -75,14 +91,14 @@ function onApply() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
       <div>
-        <div class="header-title">Design Your Theme</div>
-        <div class="header-sub" :style="{ color: p + '88' }">Changes apply live</div>
+        <div class="header-title">{{ t('customTheme.title') }}</div>
+        <div class="header-sub" :style="{ color: p + '88' }">{{ t('customTheme.subtitle') }}</div>
       </div>
-      <button class="apply-btn" :style="{ background: a, boxShadow: `0 2px 12px ${a}55` }" @click="onApply">Apply →</button>
+      <button class="apply-btn" :style="{ background: a, boxShadow: `0 2px 12px ${a}55` }" @click="onApply">{{ t('customTheme.apply') }}</button>
     </div>
 
     <!-- Live preview -->
-    <div class="section-label" :style="{ color: p }">Preview</div>
+    <div class="section-label" :style="{ color: p }">{{ t('customTheme.preview') }}</div>
     <div class="preview-wrap">
       <div
         class="preview-inner"
@@ -117,14 +133,10 @@ function onApply() {
     </div>
 
     <!-- Colors -->
-    <div class="section-label" :style="{ color: p }">Colors</div>
+    <div class="section-label" :style="{ color: p }">{{ t('customTheme.colors') }}</div>
     <div class="card" :style="{ border: `1px solid ${border}` }">
       <label
-        v-for="(item, i) in [
-          { key: 'bg',      label: 'Background', desc: 'App & decoration area' },
-          { key: 'primary', label: 'Primary',    desc: 'Title, buttons, UI chrome' },
-          { key: 'accent',  label: 'Accent',     desc: 'Shutter button, highlights' },
-        ]"
+        v-for="(item, i) in colorItems"
         :key="item.key"
         class="color-row"
         :style="{ borderBottom: i < 2 ? `1px solid ${border}` : 'none' }"
@@ -140,7 +152,7 @@ function onApply() {
     </div>
 
     <!-- Copy from preset -->
-    <div class="section-label" :style="{ color: p }">Copy colors from preset</div>
+    <div class="section-label" :style="{ color: p }">{{ t('customTheme.copyFromPreset') }}</div>
     <div class="presets-scroll">
       <button
         v-for="([k, pr]) in Object.entries(PRESETS)"
@@ -158,10 +170,10 @@ function onApply() {
     </div>
 
     <!-- Background Image -->
-    <div class="section-label" :style="{ color: p }">Background Image</div>
+    <div class="section-label" :style="{ color: p }">{{ t('customTheme.bgImage') }}</div>
     <div class="bg-tabs">
       <button
-        v-for="[mode, lbl] in [['solid','Solid'],['gradient','Gradient'],['url','URL'],['phone','Camera Roll']]"
+        v-for="[mode, lbl] in bgTabs"
         :key="mode"
         class="bg-tab"
         :style="{
@@ -178,8 +190,8 @@ function onApply() {
       <label class="color-row" style="border-bottom:none">
         <div class="color-swatch" :style="{ background: local.bg }" />
         <div class="color-info">
-          <div class="color-label">Background Color</div>
-          <div class="color-desc" :style="{ color: muted }">{{ local.bg }} — tap swatch to change</div>
+          <div class="color-label">{{ t('customTheme.bgSolidLabel') }}</div>
+          <div class="color-desc" :style="{ color: muted }">{{ t('customTheme.bgSolidDesc', { color: local.bg }) }}</div>
         </div>
         <input type="color" :value="local.bg" @input="(e) => patch({ bg: (e.target as HTMLInputElement).value, bgImage: null })" class="hidden-color-input" />
       </label>
@@ -202,7 +214,7 @@ function onApply() {
     <!-- URL -->
     <div v-else-if="bgMode === 'url'" class="card" :style="{ border: `1px solid ${border}` }">
       <div class="url-input-row" :style="{ borderBottom: local.bgImage?.startsWith('url(&quot;http') ?? false ? `1px solid ${border}` : 'none' }">
-        <div class="url-hint" :style="{ color: muted }">Paste a public image URL</div>
+        <div class="url-hint" :style="{ color: muted }">{{ t('customTheme.pasteUrl') }}</div>
         <div class="url-flex">
           <input
             v-model="urlDraft"
@@ -211,12 +223,12 @@ function onApply() {
             :style="{ border: `1px solid ${border}`, color: '#fff' }"
             @keydown.enter="applyUrl"
           />
-          <button class="url-load-btn" :style="{ background: a }" @click="applyUrl">Load</button>
+          <button class="url-load-btn" :style="{ background: a }" @click="applyUrl">{{ t('customTheme.load') }}</button>
         </div>
       </div>
       <div v-if="local.bgImage && local.bgImage.startsWith('url(&quot;http')" class="url-preview-row">
         <div class="url-thumb" :style="{ backgroundImage: local.bgImage, border: `1px solid ${border}` }" />
-        <div class="url-loaded-text" :style="{ color: muted }">Image loaded from URL</div>
+        <div class="url-loaded-text" :style="{ color: muted }">{{ t('customTheme.imageFromUrl') }}</div>
         <button class="url-remove-btn" @click="patch({ bgImage: null })">×</button>
       </div>
     </div>
@@ -227,15 +239,15 @@ function onApply() {
       <div v-if="local.bgImage?.startsWith('url(&quot;data:')" class="phone-loaded">
         <div class="phone-preview" :style="{ backgroundImage: local.bgImage, border: `1px solid ${border}` }" />
         <div class="phone-btns">
-          <button class="phone-change-btn" :style="{ border: `1px solid ${border}` }" @click="fileInput?.click()">Change Photo</button>
-          <button class="phone-remove-btn" @click="patch({ bgImage: null })">Remove</button>
+          <button class="phone-change-btn" :style="{ border: `1px solid ${border}` }" @click="fileInput?.click()">{{ t('customTheme.changePhoto') }}</button>
+          <button class="phone-remove-btn" @click="patch({ bgImage: null })">{{ t('customTheme.remove') }}</button>
         </div>
       </div>
       <div v-else class="phone-empty">
         <div style="font-size:40px;line-height:1">📷</div>
-        <div class="phone-title">Choose from Camera Roll</div>
-        <div class="phone-desc" :style="{ color: muted }">Select a photo from your device to use as background</div>
-        <button class="phone-browse-btn" :style="{ background: a, boxShadow: `0 4px 16px ${a}55` }" @click="fileInput?.click()">Browse Photos</button>
+        <div class="phone-title">{{ t('customTheme.chooseFromRoll') }}</div>
+        <div class="phone-desc" :style="{ color: muted }">{{ t('customTheme.chooseFromRollDesc') }}</div>
+        <button class="phone-browse-btn" :style="{ background: a, boxShadow: `0 4px 16px ${a}55` }" @click="fileInput?.click()">{{ t('customTheme.browsePhotos') }}</button>
       </div>
     </div>
 

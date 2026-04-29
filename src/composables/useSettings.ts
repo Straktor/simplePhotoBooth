@@ -1,5 +1,6 @@
 import { reactive, readonly, watch } from 'vue'
 import type { CustomThemeCfg } from '@/themes'
+import { i18n } from '@/i18n'
 
 export interface AppSettings {
   activeThemeKey: string
@@ -9,6 +10,7 @@ export interface AppSettings {
   mirrorPreview: boolean
   darkMode: boolean
   fontFamily: string
+  language: string
   capturedPhotos: string[]
 }
 
@@ -22,6 +24,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   mirrorPreview: true,
   darkMode: false,
   fontFamily: 'system',
+  language: 'en',
   capturedPhotos: [],
 }
 
@@ -40,6 +43,10 @@ const settings = reactive<AppSettings>({
   ...stored,
   customThemeCfg: { ...DEFAULT_SETTINGS.customThemeCfg, ...(stored.customThemeCfg ?? {}) },
 })
+
+watch(() => settings.language, (lang) => {
+  i18n.global.locale = lang as any
+}, { immediate: true })
 
 watch(settings, (val) => {
   try {

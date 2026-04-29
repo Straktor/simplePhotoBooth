@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { ResolvedTheme } from '@/themes'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   photos: string[]
@@ -8,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ back: [] }>()
 
-const t = props.theme
+const t2 = props.theme
 
 function downloadPhoto(dataUrl: string, index: number) {
   const a = document.createElement('a')
@@ -19,23 +22,23 @@ function downloadPhoto(dataUrl: string, index: number) {
 </script>
 
 <template>
-  <div class="gallery" :style="{ background: t.bg, color: t.text, fontFamily: t.font }">
-    <div class="header" :style="{ borderBottom: `1px solid ${t.border}`, background: t.bg }">
-      <button class="back-btn" :style="{ color: t.primary }" @click="emit('back')">
+  <div class="gallery" :style="{ background: t2.bg, color: t2.text, fontFamily: t2.font }">
+    <div class="header" :style="{ borderBottom: `1px solid ${t2.border}`, background: t2.bg }">
+      <button class="back-btn" :style="{ color: t2.primary }" @click="emit('back')">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
       </button>
-      <span class="title">Gallery</span>
-      <span class="count" :style="{ color: t.textMuted }">{{ photos.length }} photo{{ photos.length !== 1 ? 's' : '' }}</span>
+      <span class="title">{{ t('gallery.title') }}</span>
+      <span class="count" :style="{ color: t2.textMuted }">{{ t('gallery.photoCount', photos.length) }}</span>
     </div>
 
     <div class="grid-wrap">
-      <div v-if="photos.length === 0" class="empty" :style="{ color: t.textMuted }">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" :stroke="t.textMuted" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <div v-if="photos.length === 0" class="empty" :style="{ color: t2.textMuted }">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" :stroke="t2.textMuted" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
         </svg>
-        <p>No photos yet.<br>Take some!</p>
+        <p>{{ t('gallery.empty') }}</p>
       </div>
 
       <div v-else class="grid">

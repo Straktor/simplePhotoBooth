@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { PRESETS, FONTS, resolveTheme } from '@/themes'
 import type { CustomThemeCfg } from '@/themes'
 import ThemeIcon from '@/components/ThemeIcon.vue'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   activeKey: string
@@ -12,6 +15,7 @@ const props = defineProps<{
   mirrorPreview: boolean
   darkMode: boolean
   fontFamily: string
+  language: string
 }>()
 
 const emit = defineEmits<{
@@ -23,45 +27,50 @@ const emit = defineEmits<{
   updateMirror: [val: boolean]
   updateDarkMode: [val: boolean]
   updateFont: [key: string]
+  updateLanguage: [lang: string]
   reset: []
 }>()
 
 const fontCss = computed(() => FONTS.find(f => f.key === props.fontFamily)?.css)
-const t = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode, fontCss.value))
+const t2 = computed(() => resolveTheme(props.activeKey, props.customCfg, props.darkMode, fontCss.value))
 const mode = computed<'dark' | 'light'>(() => props.darkMode ? 'dark' : 'light')
 const allThemes = computed(() => Object.entries(PRESETS))
+
+const LANGUAGES = [
+  { key: 'en', label: 'EN', name: 'English' },
+  { key: 'fr', label: 'FR', name: 'Français' },
+]
 </script>
 
 <template>
-  <div class="settings" :style="{ background: t.bg, color: t.text, fontFamily: t.font }">
+  <div class="settings" :style="{ background: t2.bg, color: t2.text, fontFamily: t2.font }">
 
     <!-- Header -->
-    <div class="hdr" :style="{ background: t.bg, borderBottom: `1px solid ${t.border}` }">
-      <button class="back-btn" :style="{ color: t.accent }" @click="emit('back')">
+    <div class="hdr" :style="{ background: t2.bg, borderBottom: `1px solid ${t2.border}` }">
+      <button class="back-btn" :style="{ color: t2.accent }" @click="emit('back')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/>
         </svg>
-        Back
+        {{ t('settings.back') }}
       </button>
-      <span class="hdr-title">Settings</span>
+      <span class="hdr-title">{{ t('settings.title') }}</span>
       <div style="width:64px" />
     </div>
 
     <div class="content">
 
       <!-- APPEARANCE -->
-      <div class="section-label" :style="{ color: t.textMuted }">Appearance</div>
-      <div class="group" :style="{ background: t.surface, border: `1px solid ${t.border}` }">
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.appearance') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <!-- Mode -->
         <div class="row">
-          <span class="row-label">Mode</span>
+          <span class="row-label">{{ t('settings.mode') }}</span>
           <div class="seg" :style="{ background: props.darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)' }">
             <button
               class="seg-btn"
-              :class="{ active: !darkMode }"
               :style="{
-                background: !darkMode ? t.accent : 'transparent',
-                color: !darkMode ? '#fff' : t.textMuted,
+                background: !darkMode ? t2.accent : 'transparent',
+                color: !darkMode ? '#fff' : t2.textMuted,
               }"
               @click="emit('updateDarkMode', false)"
             >
@@ -72,38 +81,37 @@ const allThemes = computed(() => Object.entries(PRESETS))
                 <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
                 <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
               </svg>
-              Light
+              {{ t('settings.light') }}
             </button>
             <button
               class="seg-btn"
-              :class="{ active: darkMode }"
               :style="{
-                background: darkMode ? t.accent : 'transparent',
-                color: darkMode ? '#fff' : t.textMuted,
+                background: darkMode ? t2.accent : 'transparent',
+                color: darkMode ? '#fff' : t2.textMuted,
               }"
               @click="emit('updateDarkMode', true)"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
               </svg>
-              Dark
+              {{ t('settings.dark') }}
             </button>
           </div>
         </div>
 
-        <div class="divider" :style="{ background: t.border }" />
+        <div class="divider" :style="{ background: t2.border }" />
 
         <!-- Font -->
         <div class="row">
-          <span class="row-label">Font</span>
+          <span class="row-label">{{ t('settings.font') }}</span>
           <div class="seg font-seg" :style="{ background: props.darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)' }">
             <button
               v-for="f in FONTS"
               :key="f.key"
               class="seg-btn font-seg-btn"
               :style="{
-                background: fontFamily === f.key ? t.accent : 'transparent',
-                color: fontFamily === f.key ? '#fff' : t.textMuted,
+                background: fontFamily === f.key ? t2.accent : 'transparent',
+                color: fontFamily === f.key ? '#fff' : t2.textMuted,
                 fontFamily: f.css,
               }"
               @click="emit('updateFont', f.key)"
@@ -113,30 +121,30 @@ const allThemes = computed(() => Object.entries(PRESETS))
       </div>
 
       <!-- APP -->
-      <div class="section-label" :style="{ color: t.textMuted }">App</div>
-      <div class="group" :style="{ background: t.surface, border: `1px solid ${t.border}` }">
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.app') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <div class="row">
-          <span class="row-label">Title</span>
+          <span class="row-label">{{ t('settings.appTitle') }}</span>
           <input
             :value="appTitle"
-            placeholder="Simple Photo Booth"
+            :placeholder="t('settings.appTitlePlaceholder')"
             class="inline-input"
-            :style="{ color: t.text, fontFamily: t.font }"
+            :style="{ color: t2.text, fontFamily: t2.font }"
             @input="emit('updateTitle', ($event.target as HTMLInputElement).value)"
           />
         </div>
       </div>
 
       <!-- THEME -->
-      <div class="section-label" :style="{ color: t.textMuted }">Theme</div>
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.theme') }}</div>
       <div class="theme-scroll">
         <div
           v-for="[k, p] in allThemes"
           :key="k"
           class="theme-card"
           :style="{
-            border: `2px solid ${activeKey === k ? p[mode].accent : t.border}`,
-            background: activeKey === k ? p[mode].accent + '12' : t.surface,
+            border: `2px solid ${activeKey === k ? p[mode].accent : t2.border}`,
+            background: activeKey === k ? p[mode].accent + '12' : t2.surface,
           }"
           @click="emit('selectTheme', k)"
         >
@@ -159,8 +167,8 @@ const allThemes = computed(() => Object.entries(PRESETS))
         <div
           class="theme-card"
           :style="{
-            border: `2px solid ${activeKey === 'custom' ? customCfg.accent : t.border}`,
-            background: activeKey === 'custom' ? customCfg.accent + '12' : t.surface,
+            border: `2px solid ${activeKey === 'custom' ? customCfg.accent : t2.border}`,
+            background: activeKey === 'custom' ? customCfg.accent + '12' : t2.surface,
           }"
           @click="emit('editCustom')"
         >
@@ -178,8 +186,8 @@ const allThemes = computed(() => Object.entries(PRESETS))
             </div>
           </div>
           <div class="tc-bottom" :style="{ borderTop: `1px solid rgba(255,255,255,0.08)`, background: '#1a1a2e' }">
-            <div class="tc-name" style="color:#ccc">Custom</div>
-            <div class="tc-edit-hint">edit</div>
+            <div class="tc-name" style="color:#ccc">{{ t('settings.themeCustom') }}</div>
+            <div class="tc-edit-hint">{{ t('settings.themeEdit') }}</div>
           </div>
           <div v-if="activeKey === 'custom'" class="tc-check" :style="{ background: customCfg.accent }">
             <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -188,13 +196,13 @@ const allThemes = computed(() => Object.entries(PRESETS))
       </div>
 
       <!-- CAMERA -->
-      <div class="section-label" :style="{ color: t.textMuted }">Camera</div>
-      <div class="group" :style="{ background: t.surface, border: `1px solid ${t.border}` }">
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.camera') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <div class="row">
-          <span class="row-label">Mirror selfie</span>
+          <span class="row-label">{{ t('settings.mirrorSelfie') }}</span>
           <div
             class="toggle"
-            :style="{ background: mirrorPreview ? t.accent : (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)') }"
+            :style="{ background: mirrorPreview ? t2.accent : (darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)') }"
             @click="emit('updateMirror', !mirrorPreview)"
           >
             <div class="toggle-knob" :style="{ transform: mirrorPreview ? 'translateX(20px)' : 'translateX(0)' }" />
@@ -203,18 +211,18 @@ const allThemes = computed(() => Object.entries(PRESETS))
       </div>
 
       <!-- COUNTDOWN -->
-      <div class="section-label" :style="{ color: t.textMuted }">Countdown</div>
-      <div class="group" :style="{ background: t.surface, border: `1px solid ${t.border}` }">
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.countdown') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <div class="row">
-          <span class="row-label">Duration</span>
+          <span class="row-label">{{ t('settings.duration') }}</span>
           <div class="seg" :style="{ background: props.darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)' }">
             <button
               v-for="s in [3, 5, 10]"
               :key="s"
               class="seg-btn"
               :style="{
-                background: countdownDuration === s ? t.accent : 'transparent',
-                color: countdownDuration === s ? '#fff' : t.textMuted,
+                background: countdownDuration === s ? t2.accent : 'transparent',
+                color: countdownDuration === s ? '#fff' : t2.textMuted,
               }"
               @click="emit('updateCountdown', s)"
             >{{ s }}s</button>
@@ -222,15 +230,38 @@ const allThemes = computed(() => Object.entries(PRESETS))
         </div>
       </div>
 
+      <!-- LANGUAGE -->
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.language') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
+        <div class="row">
+          <div class="lang-options">
+            <button
+              v-for="lang in LANGUAGES"
+              :key="lang.key"
+              class="lang-btn"
+              :style="{
+                border: `1.5px solid ${language === lang.key ? t2.accent : t2.border}`,
+                background: language === lang.key ? t2.accent + '18' : 'transparent',
+                color: language === lang.key ? t2.accent : t2.text,
+              }"
+              @click="emit('updateLanguage', lang.key)"
+            >
+              <span class="lang-code">{{ lang.label }}</span>
+              <span class="lang-name" :style="{ color: language === lang.key ? t2.accent : t2.textMuted }">{{ lang.name }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- RESET -->
-      <div class="section-label" :style="{ color: t.textMuted }">Danger Zone</div>
-      <div class="group" :style="{ background: t.surface, border: `1px solid ${t.border}` }">
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.dangerZone') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <button
           class="reset-row"
-          :style="{ color: '#e05555', fontFamily: t.font }"
+          :style="{ color: '#e05555', fontFamily: t2.font }"
           @click="emit('reset')"
         >
-          Reset to defaults
+          {{ t('settings.resetDefaults') }}
         </button>
       </div>
 
@@ -387,6 +418,34 @@ const allThemes = computed(() => Object.entries(PRESETS))
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.3);
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Language ── */
+.lang-options {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.lang-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+}
+.lang-code {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.lang-name {
+  font-size: 11px;
+  font-weight: 500;
 }
 
 /* ── Reset row ── */
