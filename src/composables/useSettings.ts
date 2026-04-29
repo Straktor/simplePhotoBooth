@@ -15,7 +15,7 @@ const STORAGE_KEY = 'photobooth-settings-v2'
 const DEFAULT_SETTINGS: AppSettings = {
   activeThemeKey: 'neon',
   customThemeCfg: { primary: '#7c6fff', accent: '#ff6b9d', bg: '#09090f', bgImage: null },
-  appTitle: 'Photo Booth',
+  appTitle: 'Simple Photo Booth',
   countdownDuration: 3,
   mirrorPreview: true,
   capturedPhotos: [],

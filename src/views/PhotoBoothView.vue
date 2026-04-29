@@ -122,11 +122,10 @@ const galleryTheme = computed(() => t.value)
     <!-- Top bar -->
     <div v-if="!isFullscreen" class="topbar">
       <div class="app-title-wrap">
-        <span class="app-subtitle" :style="{ color: t.textMuted }">Simple</span>
         <span
           class="app-title"
           :style="{ backgroundImage: t.titleGradient }"
-        >{{ settings.appTitle || 'Photo Booth' }}</span>
+        >{{ settings.appTitle || 'Simple Photo Booth' }}</span>
       </div>
       <div class="topbar-actions">
         <button class="icon-btn" @click="handleFlip">
@@ -377,12 +376,6 @@ const galleryTheme = computed(() => t.value)
   display: flex;
   flex-direction: column;
   gap: 1px;
-}
-.app-subtitle {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
 }
 .app-title {
   font-size: 19px;
