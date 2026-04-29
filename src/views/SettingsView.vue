@@ -64,15 +64,15 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
           @click="emit('selectTheme', k)"
         >
           <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
-            <div class="tc-swatches">
-              <div v-for="(c, i) in [p.bg, p.primary, p.accent]" :key="i" class="tc-swatch" :style="{ background: c }" />
-            </div>
-            <div class="tc-lens" :style="{ background: p.primary + '33', border: `1px solid ${p.primary}44` }">
-              <div class="tc-lens-dot" :style="{ background: p.accent }" />
-            </div>
+            <svg class="tc-camera-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" :stroke="p.primary" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4" :stroke="p.accent"/>
+            </svg>
           </div>
           <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
-            <div>{{ p.emoji }}</div>
+            <div class="tc-swatches-row">
+              <div v-for="(c, i) in [p.primary, p.accent]" :key="i" class="tc-dot" :style="{ background: c }" />
+            </div>
             <div class="tc-label" :style="{ color: p.text }">{{ p.label }}</div>
           </div>
           <div v-if="activeKey === k" class="tc-check" :style="{ background: p.accent }">
@@ -94,15 +94,15 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
           @click="emit('selectTheme', k)"
         >
           <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
-            <div class="tc-swatches">
-              <div v-for="(c, i) in [p.bg, p.primary, p.accent]" :key="i" class="tc-swatch" :style="{ background: c }" />
-            </div>
-            <div class="tc-lens" :style="{ background: p.primary + '33', border: `1px solid ${p.primary}44` }">
-              <div class="tc-lens-dot" :style="{ background: p.accent }" />
-            </div>
+            <svg class="tc-camera-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" :stroke="p.primary" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4" :stroke="p.accent"/>
+            </svg>
           </div>
           <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
-            <div>{{ p.emoji }}</div>
+            <div class="tc-swatches-row">
+              <div v-for="(c, i) in [p.primary, p.accent]" :key="i" class="tc-dot" :style="{ background: c }" />
+            </div>
             <div class="tc-label" :style="{ color: p.text }">{{ p.label }}</div>
           </div>
           <div v-if="activeKey === k" class="tc-check" :style="{ background: p.accent }">
@@ -126,7 +126,12 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }"
           >
-            <div class="tc-pencil" :style="{ background: customCfg.primary + '55', border: `1.5px solid ${customCfg.accent}` }">✏️</div>
+            <div class="tc-pencil" :style="{ background: customCfg.primary + '55', border: `1.5px solid ${customCfg.accent}` }">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" :stroke="customCfg.accent" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
           </div>
           <div class="tc-footer" style="background:#1a1a2e;border-top:1px solid rgba(255,255,255,0.08)">
             <div class="tc-label" style="color:#ddd;font-size:8px">Custom</div>
@@ -247,32 +252,30 @@ const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p
   position: relative;
 }
 .tc-preview {
-  height: 48px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 4px;
-  gap: 3px;
-}
-.tc-swatches { display: flex; gap: 3px; }
-.tc-swatch   { flex: 1; height: 5px; border-radius: 3px; }
-.tc-lens {
-  height: 14px;
-  border-radius: 3px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.tc-lens-dot { width: 7px; height: 7px; border-radius: 50%; }
+.tc-camera-icon { opacity: 0.92; }
 .tc-footer {
-  padding: 4px 3px;
+  padding: 5px 4px 4px;
   text-align: center;
+}
+.tc-swatches-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.tc-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
 }
 .tc-label {
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.2px;
-  margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
