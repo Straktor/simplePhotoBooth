@@ -1,25 +1,24 @@
 import { reactive, readonly, watch } from 'vue'
+import type { CustomThemeCfg } from '@/themes'
 
 export interface AppSettings {
-  primaryColor: string
-  accentColor: string
-  backgroundColor: string
-  backgroundImage: string
+  activeThemeKey: string
+  customThemeCfg: CustomThemeCfg
+  appTitle: string
   countdownDuration: number
-  fontFamily: 'system' | 'mono' | 'serif'
   mirrorPreview: boolean
+  capturedPhotos: string[]
 }
 
-const STORAGE_KEY = 'photobooth-settings'
+const STORAGE_KEY = 'photobooth-settings-v2'
 
 const DEFAULT_SETTINGS: AppSettings = {
-  primaryColor: '#6c63ff',
-  accentColor: '#ff6584',
-  backgroundColor: '#1a1a2e',
-  backgroundImage: '',
+  activeThemeKey: 'neon',
+  customThemeCfg: { primary: '#7c6fff', accent: '#ff6b9d', bg: '#09090f', bgImage: null },
+  appTitle: 'Photo Booth',
   countdownDuration: 3,
-  fontFamily: 'system',
   mirrorPreview: true,
+  capturedPhotos: [],
 }
 
 function loadFromStorage(): Partial<AppSettings> {
@@ -31,13 +30,19 @@ function loadFromStorage(): Partial<AppSettings> {
   }
 }
 
-const settings = reactive<AppSettings>({ ...DEFAULT_SETTINGS, ...loadFromStorage() })
+const stored = loadFromStorage()
+const settings = reactive<AppSettings>({
+  ...DEFAULT_SETTINGS,
+  ...stored,
+  customThemeCfg: { ...DEFAULT_SETTINGS.customThemeCfg, ...(stored.customThemeCfg ?? {}) },
+})
 
 watch(settings, (val) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(val))
+    const toSave = { ...val, capturedPhotos: val.capturedPhotos.slice(-50) }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   } catch {
-    // localStorage quota exceeded (likely large backgroundImage)
+    // quota exceeded
   }
 }, { deep: true })
 
@@ -46,9 +51,18 @@ export function useSettings() {
     Object.assign(settings, partial)
   }
 
-  function reset() {
-    Object.assign(settings, DEFAULT_SETTINGS)
+  function updateCustomTheme(partial: Partial<CustomThemeCfg>) {
+    Object.assign(settings.customThemeCfg, partial)
   }
 
-  return { settings: readonly(settings), update, reset }
+  function addPhoto(dataUrl: string) {
+    settings.capturedPhotos.push(dataUrl)
+  }
+
+  function reset() {
+    Object.assign(settings, DEFAULT_SETTINGS)
+    Object.assign(settings.customThemeCfg, DEFAULT_SETTINGS.customThemeCfg)
+  }
+
+  return { settings: readonly(settings), update, updateCustomTheme, addPhoto, reset }
 }

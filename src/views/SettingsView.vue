@@ -1,270 +1,327 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useSettings } from '@/composables/useSettings'
-import type { AppSettings } from '@/composables/useSettings'
+import { computed } from 'vue'
+import { PRESETS, resolveTheme } from '@/themes'
+import type { CustomThemeCfg } from '@/themes'
 
-const { settings, update, reset } = useSettings()
+const props = defineProps<{
+  activeKey: string
+  customCfg: CustomThemeCfg
+  appTitle: string
+  countdownDuration: number
+  mirrorPreview: boolean
+}>()
 
-const bgImageWarning = ref('')
+const emit = defineEmits<{
+  back: []
+  selectTheme: [key: string]
+  editCustom: []
+  updateTitle: [title: string]
+  updateCountdown: [dur: number]
+  updateMirror: [val: boolean]
+}>()
 
-function onColorInput(key: keyof AppSettings, value: string) {
-  update({ [key]: value } as Partial<AppSettings>)
-}
+const t = computed(() => resolveTheme(props.activeKey, props.customCfg))
 
-function onBgImageChange(e: Event) {
-  bgImageWarning.value = ''
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  if (file.size > 2 * 1024 * 1024) {
-    bgImageWarning.value = 'Large image — may exceed browser storage limits.'
-  }
-  const reader = new FileReader()
-  reader.onload = () => update({ backgroundImage: reader.result as string })
-  reader.readAsDataURL(file)
-}
-
-function clearBgImage() {
-  update({ backgroundImage: '' })
-  bgImageWarning.value = ''
-}
-
-const countdownOptions = [3, 5, 10] as const
+const coreThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p.group === 'Core'))
+const holidayThemes = computed(() => Object.entries(PRESETS).filter(([, p]) => p.group === 'Holidays'))
 </script>
 
 <template>
-  <div class="settings-page">
-    <h1 class="page-title">Settings</h1>
+  <div class="settings" :style="{ background: t.bg, color: t.text, fontFamily: t.font }">
+    <!-- Header -->
+    <div class="header" :style="{ background: t.bg, borderBottom: `1px solid ${t.border}` }">
+      <button class="back-btn" :style="{ color: t.primary }" @click="emit('back')">←</button>
+      <span class="title">Settings</span>
+    </div>
 
-    <!-- Theme -->
-    <p class="group-label">Theme</p>
-    <div class="group">
-      <div class="row">
-        <span class="row-label">Primary color</span>
-        <input type="color" :value="settings.primaryColor" @input="onColorInput('primaryColor', ($event.target as HTMLInputElement).value)" class="color-swatch" />
-      </div>
-      <div class="divider" />
-      <div class="row">
-        <span class="row-label">Accent color</span>
-        <input type="color" :value="settings.accentColor" @input="onColorInput('accentColor', ($event.target as HTMLInputElement).value)" class="color-swatch" />
-      </div>
-      <div class="divider" />
-      <div class="row">
-        <span class="row-label">Background color</span>
-        <input type="color" :value="settings.backgroundColor" @input="onColorInput('backgroundColor', ($event.target as HTMLInputElement).value)" class="color-swatch" />
-      </div>
-      <div class="divider" />
-      <div class="row">
-        <span class="row-label">Background image</span>
-        <div class="row-end">
-          <button v-if="settings.backgroundImage" class="link-btn danger" @click="clearBgImage">Remove</button>
-          <label v-else class="link-btn">
-            Choose
-            <input type="file" accept="image/*" @change="onBgImageChange" class="file-input" />
-          </label>
+    <!-- App Title -->
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">App Title</div>
+      <div class="s-card" :style="{ background: t.surface, backdropFilter: t.glassBlur, border: `1px solid ${t.border}` }">
+        <div class="s-input-wrap">
+          <input
+            :value="appTitle"
+            placeholder="Photo Booth"
+            class="title-input"
+            :style="{ color: t.text, fontFamily: t.font }"
+            @input="emit('updateTitle', ($event.target as HTMLInputElement).value)"
+          />
         </div>
       </div>
-      <p v-if="bgImageWarning" class="warn-text">{{ bgImageWarning }}</p>
+    </div>
+
+    <!-- Core Themes -->
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">Core Themes</div>
+      <div class="theme-row">
+        <div
+          v-for="[k, p] in coreThemes"
+          :key="k"
+          class="theme-card"
+          :style="{ border: `2px solid ${activeKey === k ? p.accent : 'rgba(255,255,255,0.08)'}` }"
+          @click="emit('selectTheme', k)"
+        >
+          <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
+            <div class="tc-swatches">
+              <div v-for="(c, i) in [p.bg, p.primary, p.accent]" :key="i" class="tc-swatch" :style="{ background: c }" />
+            </div>
+            <div class="tc-lens" :style="{ background: p.primary + '33', border: `1px solid ${p.primary}44` }">
+              <div class="tc-lens-dot" :style="{ background: p.accent }" />
+            </div>
+          </div>
+          <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
+            <div>{{ p.emoji }}</div>
+            <div class="tc-label" :style="{ color: p.text }">{{ p.label }}</div>
+          </div>
+          <div v-if="activeKey === k" class="tc-check" :style="{ background: p.accent }">
+            <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Holiday Themes -->
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">Holiday Themes</div>
+      <div class="theme-row">
+        <div
+          v-for="[k, p] in holidayThemes"
+          :key="k"
+          class="theme-card"
+          :style="{ border: `2px solid ${activeKey === k ? p.accent : 'rgba(255,255,255,0.08)'}` }"
+          @click="emit('selectTheme', k)"
+        >
+          <div class="tc-preview" :style="{ background: p.cameraBg || p.bg }">
+            <div class="tc-swatches">
+              <div v-for="(c, i) in [p.bg, p.primary, p.accent]" :key="i" class="tc-swatch" :style="{ background: c }" />
+            </div>
+            <div class="tc-lens" :style="{ background: p.primary + '33', border: `1px solid ${p.primary}44` }">
+              <div class="tc-lens-dot" :style="{ background: p.accent }" />
+            </div>
+          </div>
+          <div class="tc-footer" :style="{ background: p.surfaceSolid || p.bg, borderTop: `1px solid ${p.border}` }">
+            <div>{{ p.emoji }}</div>
+            <div class="tc-label" :style="{ color: p.text }">{{ p.label }}</div>
+          </div>
+          <div v-if="activeKey === k" class="tc-check" :style="{ background: p.accent }">
+            <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+
+        <!-- Custom card -->
+        <div
+          class="theme-card"
+          :style="{ border: `2px solid ${activeKey === 'custom' ? t.accent : 'rgba(255,255,255,0.1)'}` }"
+          @click="emit('editCustom')"
+        >
+          <div
+            class="tc-preview"
+            :style="{
+              background: customCfg.bgImage ? undefined : customCfg.bg,
+              backgroundImage: customCfg.bgImage ?? undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }"
+          >
+            <div class="tc-pencil" :style="{ background: customCfg.primary + '55', border: `1.5px solid ${customCfg.accent}` }">✏️</div>
+          </div>
+          <div class="tc-footer" style="background:#1a1a2e;border-top:1px solid rgba(255,255,255,0.08)">
+            <div class="tc-label" style="color:#ddd;font-size:8px">Custom</div>
+            <div style="font-size:7px;color:rgba(255,255,255,0.4)">tap to edit</div>
+          </div>
+          <div v-if="activeKey === 'custom'" class="tc-check" :style="{ background: customCfg.accent }">
+            <svg width="7" height="5" viewBox="0 0 8 6"><polyline points="1,3 3,5 7,1" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Camera -->
-    <p class="group-label">Camera</p>
-    <div class="group">
-      <div class="row">
-        <span class="row-label">Countdown</span>
-        <select :value="settings.countdownDuration" @change="update({ countdownDuration: Number(($event.target as HTMLSelectElement).value) })" class="select">
-          <option v-for="n in countdownOptions" :key="n" :value="n">{{ n }}s</option>
-        </select>
-      </div>
-      <div class="divider" />
-      <div class="row">
-        <span class="row-label">Mirror selfie</span>
-        <label class="toggle-wrap">
-          <input
-            type="checkbox"
-            :checked="settings.mirrorPreview"
-            @change="update({ mirrorPreview: ($event.target as HTMLInputElement).checked })"
-            class="toggle-input"
-          />
-          <span class="toggle-track">
-            <span class="toggle-thumb" />
-          </span>
-        </label>
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">Camera</div>
+      <div class="s-card" :style="{ background: t.surface, backdropFilter: t.glassBlur, border: `1px solid ${t.border}` }">
+        <div class="s-row" style="border-bottom:none">
+          <span class="s-row-label">Mirror selfie</span>
+          <div
+            class="toggle"
+            :style="{ background: mirrorPreview ? t.accent : 'rgba(120,120,130,0.28)' }"
+            @click="emit('updateMirror', !mirrorPreview)"
+          >
+            <div class="toggle-knob" :style="{ left: mirrorPreview ? '23px' : '3px' }" />
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Font -->
-    <p class="group-label">Display</p>
-    <div class="group">
-      <div class="row">
-        <span class="row-label">Font</span>
-        <select :value="settings.fontFamily" @change="update({ fontFamily: ($event.target as HTMLSelectElement).value as AppSettings['fontFamily'] })" class="select">
-          <option value="system">System</option>
-          <option value="mono">Monospace</option>
-          <option value="serif">Serif</option>
-        </select>
+    <!-- Countdown -->
+    <div class="s-section">
+      <div class="s-section-label" :style="{ color: t.primary }">Countdown</div>
+      <div class="s-card" :style="{ background: t.surface, backdropFilter: t.glassBlur, border: `1px solid ${t.border}` }">
+        <div class="countdown-btns">
+          <button
+            v-for="s in [3, 5, 10]"
+            :key="s"
+            class="countdown-btn"
+            :style="{
+              border: `1.5px solid ${countdownDuration === s ? t.accent : t.border}`,
+              background: countdownDuration === s ? t.accent + '22' : 'transparent',
+              color: countdownDuration === s ? t.accent : t.textMuted,
+              fontFamily: t.font,
+            }"
+            @click="emit('updateCountdown', s)"
+          >{{ s }}s</button>
+        </div>
       </div>
     </div>
 
-    <!-- Reset -->
-    <button class="btn-reset" @click="reset">Reset to defaults</button>
+    <div style="height:30px" />
   </div>
 </template>
 
 <style scoped>
-.settings-page {
-  max-width: 540px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 2rem;
+.settings {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
 }
-
-.page-title {
-  margin: 0 0 1.5rem;
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
+.back-btn  { font-size: 22px; line-height: 1; }
+.title     { font-weight: 700; font-size: 18px; letter-spacing: -0.3px; }
 
-.group-label {
-  margin: 0 0 0.4rem 0.25rem;
-  font-size: 0.7rem;
+.s-section { margin: 16px 16px 0; }
+.s-section-label {
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
+  opacity: 0.75;
+  padding: 0 2px 10px;
 }
-
-.group {
-  background: var(--color-surface-solid);
-  border-radius: var(--radius);
+.s-card {
+  border-radius: 14px;
   overflow: hidden;
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--color-border);
 }
-
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 1rem;
-  min-height: 3rem;
-}
-
-.row-label {
-  font-size: 0.95rem;
-  color: var(--color-text);
-  flex: 1;
-}
-
-.row-end {
-  display: flex;
-  align-items: center;
-}
-
-.divider {
-  height: 1px;
-  background: var(--color-border);
-  margin: 0 1rem;
-}
-
-/* Color swatch */
-.color-swatch {
-  width: 2.2rem;
-  height: 2.2rem;
-  padding: 0;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  background: none;
-}
-
-/* Select */
-.select {
+.s-input-wrap { padding: 10px 16px; }
+.title-input {
+  width: 100%;
   background: transparent;
-  color: var(--color-text-muted);
   border: none;
-  font-size: 0.95rem;
-  text-align: right;
+  outline: none;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 2px 0;
+}
+.s-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 16px;
+}
+.s-row-label { font-size: 15px; }
+
+.theme-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.theme-card {
+  flex-shrink: 0;
+  width: 76px;
   cursor: pointer;
-  appearance: none;
-  padding-right: 0.25rem;
-}
-
-/* Link-style button */
-.link-btn {
-  color: var(--color-primary);
-  font-size: 0.95rem;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.link-btn.danger {
-  color: #ff6b6b;
-}
-
-.file-input {
-  display: none;
-}
-
-.warn-text {
-  margin: 0;
-  padding: 0 1rem 0.75rem;
-  font-size: 0.78rem;
-  color: #f4a261;
-}
-
-/* Toggle switch */
-.toggle-wrap {
-  position: relative;
-  cursor: pointer;
-}
-
-.toggle-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-track {
-  display: block;
-  width: 2.8rem;
-  height: 1.6rem;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  transition: background var(--transition);
+  border-radius: 11px;
+  overflow: hidden;
+  transition: all 0.18s;
   position: relative;
 }
-
-.toggle-input:checked + .toggle-track {
-  background: var(--color-primary);
+.tc-preview {
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 4px;
+  gap: 3px;
+}
+.tc-swatches { display: flex; gap: 3px; }
+.tc-swatch   { flex: 1; height: 5px; border-radius: 3px; }
+.tc-lens {
+  height: 14px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tc-lens-dot { width: 7px; height: 7px; border-radius: 50%; }
+.tc-footer {
+  padding: 4px 3px;
+  text-align: center;
+}
+.tc-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tc-check {
+  position: absolute;
+  top: 3px; right: 3px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tc-pencil {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
 }
 
-.toggle-thumb {
+.toggle {
+  width: 48px; height: 28px;
+  border-radius: 14px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-knob {
   position: absolute;
-  top: 0.2rem;
-  left: 0.2rem;
-  width: 1.2rem;
-  height: 1.2rem;
+  top: 3px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-  transition: transform var(--transition);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  transition: left 0.2s;
 }
 
-.toggle-input:checked + .toggle-track .toggle-thumb {
-  transform: translateX(1.2rem);
+.countdown-btns {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
 }
-
-/* Reset button */
-.btn-reset {
-  width: 100%;
-  padding: 0.9rem;
-  border-radius: var(--radius);
-  background: var(--color-surface-solid);
-  border: 1px solid var(--color-border);
-  color: #ff6b6b;
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-top: 0.5rem;
+.countdown-btn {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  transition: all 0.18s;
 }
 </style>
