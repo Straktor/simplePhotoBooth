@@ -234,21 +234,18 @@ const LANGUAGES = [
       <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.language') }}</div>
       <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <div class="row">
-          <div class="lang-options">
+          <span class="row-label">{{ t('settings.language') }}</span>
+          <div class="seg" :style="{ background: props.darkMode ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)' }">
             <button
               v-for="lang in LANGUAGES"
               :key="lang.key"
-              class="lang-btn"
+              class="seg-btn"
               :style="{
-                border: `1.5px solid ${language === lang.key ? t2.accent : t2.border}`,
-                background: language === lang.key ? t2.accent + '18' : 'transparent',
-                color: language === lang.key ? t2.accent : t2.text,
+                background: language === lang.key ? t2.accent : 'transparent',
+                color: language === lang.key ? '#fff' : t2.textMuted,
               }"
               @click="emit('updateLanguage', lang.key)"
-            >
-              <span class="lang-code">{{ lang.label }}</span>
-              <span class="lang-name" :style="{ color: language === lang.key ? t2.accent : t2.textMuted }">{{ lang.name }}</span>
-            </button>
+            >{{ lang.label }}</button>
           </div>
         </div>
       </div>
@@ -418,34 +415,6 @@ const LANGUAGES = [
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.3);
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* ── Language ── */
-.lang-options {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-.lang-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 12px 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-  background: transparent;
-}
-.lang-code {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-.lang-name {
-  font-size: 11px;
-  font-weight: 500;
 }
 
 /* ── Reset row ── */
