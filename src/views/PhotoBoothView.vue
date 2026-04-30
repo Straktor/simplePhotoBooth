@@ -29,7 +29,7 @@ const isFront = ref(true)
 const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-const { isCameraReady, error, startCamera, flipCamera, capturePhoto, savePhoto, startRecording, stopRecording } = useCamera(videoRef, canvasRef)
+const { isCameraReady, error, startCamera, flipCamera, capturePhoto, startRecording, stopRecording } = useCamera(videoRef, canvasRef)
 const { count: countdown, isRunning, start: startCountdown, cancel: cancelCountdown } = useCountdown()
 
 const activeKey = computed(() => settings.activeThemeKey)
