@@ -33,6 +33,13 @@ export default {
     title: 'Gallery',
     photoCount: '{count} photo | {count} photos',
     empty: 'No photos yet.\nTake some!',
+    select: 'Select',
+    cancel: 'Cancel',
+    all: 'All',
+    none: 'None',
+    nSelected: '{count} selected',
+    save: 'Save | Save ({count})',
+    delete: 'Delete | Delete ({count})',
   },
   customTheme: {
     title: 'Design Your Theme',

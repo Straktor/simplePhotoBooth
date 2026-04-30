@@ -2,6 +2,11 @@ import { reactive, readonly, watch } from 'vue'
 import type { CustomThemeVariants } from '@/themes'
 import { i18n } from '@/i18n'
 
+export interface PhotoEntry {
+  url: string
+  motion?: boolean
+}
+
 export interface AppSettings {
   activeThemeKey: string
   customThemeCfg: CustomThemeVariants
@@ -11,7 +16,7 @@ export interface AppSettings {
   darkMode: boolean
   fontFamily: string
   language: string
-  capturedPhotos: string[]
+  capturedPhotos: PhotoEntry[]
 }
 
 const STORAGE_KEY = 'photobooth-settings-v2'
@@ -35,13 +40,17 @@ function migrateCustomTheme(raw: any): CustomThemeVariants {
   const def = DEFAULT_SETTINGS.customThemeCfg
   if (!raw) return def
   if (!('dark' in raw)) {
-    // Old flat format — promote to dark variant, keep default light
     return { dark: { ...def.dark, ...raw }, light: { ...def.light } }
   }
   return {
     dark:  { ...def.dark,  ...(raw.dark  ?? {}) },
     light: { ...def.light, ...(raw.light ?? {}) },
   }
+}
+
+function migratePhotos(raw: any): PhotoEntry[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map(item => typeof item === 'string' ? { url: item } : item)
 }
 
 function loadFromStorage(): Partial<AppSettings> {
@@ -58,6 +67,7 @@ const settings = reactive<AppSettings>({
   ...DEFAULT_SETTINGS,
   ...stored,
   customThemeCfg: migrateCustomTheme(stored.customThemeCfg),
+  capturedPhotos: migratePhotos((stored as any).capturedPhotos),
 })
 
 watch(() => settings.language, (lang) => {
@@ -83,8 +93,15 @@ export function useSettings() {
     Object.assign(settings.customThemeCfg.light, variants.light)
   }
 
-  function addPhoto(dataUrl: string) {
-    settings.capturedPhotos.push(dataUrl)
+  function addPhoto(url: string, motion?: boolean) {
+    settings.capturedPhotos.push({ url, motion })
+  }
+
+  function removePhotos(indices: number[]) {
+    const toRemove = new Set(indices)
+    for (let i = settings.capturedPhotos.length - 1; i >= 0; i--) {
+      if (toRemove.has(i)) settings.capturedPhotos.splice(i, 1)
+    }
   }
 
   function reset() {
@@ -93,5 +110,5 @@ export function useSettings() {
     Object.assign(settings.customThemeCfg.light, DEFAULT_SETTINGS.customThemeCfg.light)
   }
 
-  return { settings: readonly(settings), update, updateCustomTheme, addPhoto, reset }
+  return { settings: readonly(settings), update, updateCustomTheme, addPhoto, removePhotos, reset }
 }

@@ -14,7 +14,7 @@ import GalleryView from '@/views/GalleryView.vue'
 type Screen = 'booth' | 'settings' | 'customTheme' | 'gallery'
 
 const { t } = useI18n()
-const { settings, update, updateCustomTheme, addPhoto, reset } = useSettings()
+const { settings, update, updateCustomTheme, addPhoto, removePhotos, reset } = useSettings()
 
 const screen = ref<Screen>('booth')
 const isFullscreen = ref(false)
@@ -78,7 +78,6 @@ async function handleShoot() {
 
   flash.value = true
   const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value)
-  addPhoto(dataUrl)
   previewDataUrl.value = dataUrl
   photoSaved.value = false
   pendingVideoBlob.value = null
@@ -86,10 +85,11 @@ async function handleShoot() {
   showPreview.value = true
   setTimeout(() => { flash.value = false }, 400)
 
-  // Stop recording postMs after the shutter fires
+  // Stop recording postMs after the shutter fires, then register photo with motion flag
   setTimeout(async () => {
     pendingVideoBlob.value = await stopRecording()
     videoReady.value = true
+    addPhoto(dataUrl, !!pendingVideoBlob.value)
   }, postMs)
 }
 
@@ -183,9 +183,10 @@ const galleryTheme = computed(() => theme.value)
 
   <GalleryView
     v-else-if="screen === 'gallery'"
-    :photos="(settings.capturedPhotos as string[])"
+    :photos="settings.capturedPhotos"
     :theme="galleryTheme"
     @back="screen = 'booth'"
+    @delete-photos="removePhotos"
   />
 
   <!-- Booth -->

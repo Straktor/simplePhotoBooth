@@ -33,6 +33,13 @@ export default {
     title: 'Galerie',
     photoCount: '{count} photo | {count} photos',
     empty: 'Pas encore de photos.\nPrenez-en !',
+    select: 'Sélectionner',
+    cancel: 'Annuler',
+    all: 'Tout',
+    none: 'Aucun',
+    nSelected: '{count} sélectionné | {count} sélectionnés',
+    save: 'Enregistrer | Enregistrer ({count})',
+    delete: 'Supprimer | Supprimer ({count})',
   },
   customTheme: {
     title: 'Personnaliser le thème',
