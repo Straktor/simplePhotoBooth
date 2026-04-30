@@ -1,47 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1e1540"/>
-      <stop offset="100%" stop-color="#09090f"/>
-    </linearGradient>
-    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#8b85ff"/>
-      <stop offset="100%" stop-color="#5a52e0"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#6c63ff" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#6c63ff" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Black background -->
+  <rect width="512" height="512" rx="112" fill="#000000"/>
 
-  <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-
-  <!-- Glow -->
-  <ellipse cx="256" cy="280" rx="220" ry="200" fill="url(#glow)"/>
+  <!-- Top bump (photo slot) -->
+  <rect x="184" y="113" width="144" height="51" rx="25" fill="white"/>
 
   <!-- Camera body -->
-  <rect x="88" y="176" width="336" height="224" rx="36" fill="#6c63ff" opacity="0.18"/>
-  <rect x="88" y="176" width="336" height="224" rx="36" fill="none" stroke="#6c63ff" stroke-width="3" opacity="0.5"/>
+  <rect x="92" y="154" width="328" height="226" rx="40" fill="white"/>
 
-  <!-- Viewfinder notch -->
-  <rect x="168" y="143" width="112" height="49" rx="18" fill="#6c63ff" opacity="0.25"/>
-  <rect x="168" y="143" width="112" height="49" rx="18" fill="none" stroke="#6c63ff" stroke-width="3" opacity="0.5"/>
-
-  <!-- Lens outer ring -->
-  <circle cx="256" cy="288" r="86" fill="url(#ring)" opacity="0.2"/>
-  <circle cx="256" cy="288" r="86" fill="none" stroke="url(#ring)" stroke-width="3"/>
-
-  <!-- Lens mid ring -->
-  <circle cx="256" cy="288" r="60" fill="#6c63ff" opacity="0.25"/>
-
+  <!-- Lens outer -->
+  <circle cx="256" cy="267" r="72" fill="#000000"/>
+  <!-- Lens ring -->
+  <circle cx="256" cy="267" r="72" fill="none" stroke="white" stroke-width="12"/>
   <!-- Lens inner -->
-  <circle cx="256" cy="288" r="38" fill="url(#ring)"/>
+  <circle cx="256" cy="267" r="46" fill="#000000"/>
+  <circle cx="256" cy="267" r="25" fill="white" opacity="0.12"/>
 
-  <!-- Lens highlight -->
-  <circle cx="243" cy="275" r="10" fill="white" opacity="0.35"/>
+  <!-- Viewfinder -->
+  <rect x="308" y="175" width="72" height="40" rx="10" fill="#000000"/>
 
-  <!-- Flash dot -->
-  <circle cx="375" cy="213" r="14" fill="#6c63ff" opacity="0.5"/>
-  <circle cx="375" cy="213" r="7" fill="white" opacity="0.7"/>
+  <!-- Flash -->
+  <rect x="124" y="175" width="52" height="40" rx="10" fill="#000000"/>
+
+  <!-- Curtain lines -->
+  <line x1="128" y1="390" x2="384" y2="390" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <line x1="148" y1="418" x2="364" y2="418" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
 </svg>
