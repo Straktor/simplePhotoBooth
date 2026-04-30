@@ -22,12 +22,14 @@ const flash = ref(false)
 const previewDataUrl = ref<string | null>(null)
 const showPreview = ref(false)
 const photoSaved = ref(false)
+const pendingVideoBlob = ref<Blob | null>(null)
+const videoReady = ref(false)
 const isFront = ref(true)
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-const { isCameraReady, error, startCamera, flipCamera, capturePhoto, savePhoto } = useCamera(videoRef, canvasRef)
+const { isCameraReady, error, startCamera, flipCamera, capturePhoto, savePhoto, startRecording, stopRecording } = useCamera(videoRef, canvasRef)
 const { count: countdown, isRunning, start: startCountdown, cancel: cancelCountdown } = useCountdown()
 
 const activeKey = computed(() => settings.activeThemeKey)
@@ -59,23 +61,69 @@ onMounted(() => startCamera())
 
 async function handleShoot() {
   if (isRunning.value) return
+
+  // Start recording 1.5s before shutter fires so the clip has lead-up motion
+  const preMs = 1500
+  const postMs = 500
+  const recordDelay = Math.max(0, settings.countdownDuration * 1000 - preMs)
+  const recTimer = setTimeout(() => startRecording(), recordDelay)
+
   try {
     await startCountdown(settings.countdownDuration)
   } catch {
-    return // cancelled by user
+    clearTimeout(recTimer)
+    stopRecording()
+    return
   }
+
   flash.value = true
   const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value)
   addPhoto(dataUrl)
   previewDataUrl.value = dataUrl
   photoSaved.value = false
+  pendingVideoBlob.value = null
+  videoReady.value = false
   showPreview.value = true
   setTimeout(() => { flash.value = false }, 400)
+
+  // Stop recording postMs after the shutter fires
+  setTimeout(async () => {
+    pendingVideoBlob.value = await stopRecording()
+    videoReady.value = true
+  }, postMs)
 }
 
 async function handleSavePhoto() {
   if (!previewDataUrl.value) return
-  await savePhoto(previewDataUrl.value)
+
+  const ts = Date.now()
+  const files: File[] = []
+
+  const jpegBlob = await (await fetch(previewDataUrl.value)).blob()
+  files.push(new File([jpegBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' }))
+
+  if (pendingVideoBlob.value) {
+    const ext = pendingVideoBlob.value.type.includes('mp4') ? 'mp4' : 'webm'
+    files.push(new File([pendingVideoBlob.value], `photo-${ts}.${ext}`, { type: pendingVideoBlob.value.type }))
+  }
+
+  try {
+    if (navigator.canShare?.({ files })) {
+      await navigator.share({ files })
+    } else {
+      throw new Error('share unsupported')
+    }
+  } catch {
+    files.forEach(file => {
+      const url = URL.createObjectURL(file)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    })
+  }
+
   photoSaved.value = true
   setTimeout(() => { showPreview.value = false }, 1200)
 }
@@ -292,8 +340,10 @@ const galleryTheme = computed(() => theme.value)
         <div v-if="showPreview && previewDataUrl" class="preview-wrap" @click.self="showPreview = false">
           <div class="preview-card">
             <img :src="previewDataUrl" class="preview-img" alt="captured" />
+            <div v-if="photoSaved" class="preview-label">{{ t('booth.saved') }}</div>
+            <div v-else-if="!videoReady" class="preview-label preview-label--loading">…</div>
             <button
-              v-if="!photoSaved"
+              v-else
               class="preview-save-btn"
               :style="{ background: theme.accent }"
               @click="handleSavePhoto"
@@ -301,9 +351,8 @@ const galleryTheme = computed(() => theme.value)
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
               </svg>
-              {{ t('booth.saveToPhotos') }}
+              {{ pendingVideoBlob ? t('booth.savePhotoVideo') : t('booth.saveToPhotos') }}
             </button>
-            <div v-else class="preview-label">{{ t('booth.saved') }}</div>
           </div>
         </div>
       </div>
@@ -685,6 +734,10 @@ const galleryTheme = computed(() => theme.value)
   font-size: 10px;
   text-align: center;
   padding: 7px 6px;
+}
+.preview-label--loading {
+  opacity: 0.5;
+  letter-spacing: 2px;
 }
 
 /* Bottom controls */

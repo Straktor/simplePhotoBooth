@@ -1,6 +1,18 @@
 import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 
+function getSupportedVideoMime(): string {
+  if (typeof MediaRecorder === 'undefined') return ''
+  const types = [
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ]
+  return types.find(t => { try { return MediaRecorder.isTypeSupported(t) } catch { return false } }) ?? ''
+}
+
 export function useCamera(
   videoRef: Ref<HTMLVideoElement | null>,
   canvasRef: Ref<HTMLCanvasElement | null>,
@@ -10,6 +22,8 @@ export function useCamera(
   const error = ref<string | null>(null)
   const lastPhoto = ref<string | null>(null)
   const facingMode = ref<'user' | 'environment'>('user')
+  const mediaRecorder = ref<MediaRecorder | null>(null)
+  const recordingChunks: Blob[] = []
 
   async function startCamera() {
     error.value = null
@@ -105,7 +119,41 @@ export function useCamera(
     a.click()
   }
 
-  onUnmounted(stopCamera)
+  function startRecording() {
+    if (!stream.value) return
+    const mimeType = getSupportedVideoMime()
+    if (!mimeType) return
+    recordingChunks.length = 0
+    try {
+      const rec = new MediaRecorder(stream.value, { mimeType })
+      rec.ondataavailable = (e) => { if (e.data.size > 0) recordingChunks.push(e.data) }
+      rec.start(100)
+      mediaRecorder.value = rec
+    } catch {
+      mediaRecorder.value = null
+    }
+  }
+
+  function stopRecording(): Promise<Blob | null> {
+    return new Promise((resolve) => {
+      const rec = mediaRecorder.value
+      if (!rec || rec.state === 'inactive') { resolve(null); return }
+      rec.onstop = () => {
+        const blob = recordingChunks.length ? new Blob(recordingChunks, { type: rec.mimeType }) : null
+        recordingChunks.length = 0
+        mediaRecorder.value = null
+        resolve(blob)
+      }
+      try { rec.stop() } catch { resolve(null) }
+    })
+  }
+
+  onUnmounted(() => {
+    if (mediaRecorder.value && mediaRecorder.value.state !== 'inactive') {
+      try { mediaRecorder.value.stop() } catch { /* ignore */ }
+    }
+    stopCamera()
+  })
 
   return {
     stream,
@@ -119,5 +167,7 @@ export function useCamera(
     capturePhoto,
     downloadPhoto,
     savePhoto,
+    startRecording,
+    stopRecording,
   }
 }
