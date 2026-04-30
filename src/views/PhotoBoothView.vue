@@ -22,9 +22,7 @@ const isFullscreen = ref(false)
 const flash = ref(false)
 const previewDataUrl = ref<string | null>(null)
 const showPreview = ref(false)
-const photoSaved = ref(false)
-const pendingVideoBlob = ref<Blob | null>(null)
-const videoReady = ref(false)
+const isRecording = ref(false)
 const isFront = ref(true)
 
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -63,81 +61,61 @@ onMounted(() => startCamera())
 async function handleShoot() {
   if (isRunning.value) return
 
-  // Start recording 1.5s before shutter fires so the clip has lead-up motion
   const preMs = 1500
   const postMs = 500
   const recordDelay = Math.max(0, settings.countdownDuration * 1000 - preMs)
-  const recTimer = setTimeout(() => startRecording(), recordDelay)
+  const recTimer = setTimeout(() => {
+    startRecording()
+    isRecording.value = true
+  }, recordDelay)
 
   try {
     await startCountdown(settings.countdownDuration)
   } catch {
     clearTimeout(recTimer)
     stopRecording()
+    isRecording.value = false
     return
   }
 
   flash.value = true
   const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value)
   previewDataUrl.value = dataUrl
-  photoSaved.value = false
-  pendingVideoBlob.value = null
-  videoReady.value = false
   showPreview.value = true
   setTimeout(() => { flash.value = false }, 400)
 
-  // Stop recording postMs after the shutter fires, then register photo with motion flag
   setTimeout(async () => {
-    pendingVideoBlob.value = await stopRecording()
-    videoReady.value = true
-    addPhoto(dataUrl, !!pendingVideoBlob.value)
+    const videoBlob = await stopRecording()
+    isRecording.value = false
+    addPhoto(dataUrl, !!videoBlob)
+    autoSave(dataUrl, videoBlob)
+    setTimeout(() => { showPreview.value = false }, 1200)
   }, postMs)
 }
 
-async function handleSavePhoto() {
-  if (!previewDataUrl.value) return
-
+async function autoSave(jpegDataUrl: string, videoBlob: Blob | null) {
   const ts = Date.now()
-  let files: File[]
+  let blob: Blob
+  let filename: string
 
-  const video = pendingVideoBlob.value
-  if (video && video.type.includes('mp4')) {
-    // Embed MP4 inside the JPEG → Google Photos Motion Photo
-    const motionBlob = await createMotionPhoto(previewDataUrl.value, video)
-    files = [new File([motionBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' })]
-  } else if (video) {
-    // WebM (desktop): share as two separate files
-    const jpegBlob = await fetch(previewDataUrl.value).then(r => r.blob())
-    const ext = 'webm'
-    files = [
-      new File([jpegBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' }),
-      new File([video], `photo-${ts}.${ext}`, { type: video.type }),
-    ]
+  if (videoBlob?.type.includes('mp4')) {
+    blob = await createMotionPhoto(jpegDataUrl, videoBlob)
+    filename = `photo-${ts}.jpg`
   } else {
-    // Photo only
-    const jpegBlob = await fetch(previewDataUrl.value).then(r => r.blob())
-    files = [new File([jpegBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' })]
-  }
-
-  try {
-    if (navigator.canShare?.({ files })) {
-      await navigator.share({ files })
-    } else {
-      throw new Error('share unsupported')
+    blob = await fetch(jpegDataUrl).then(r => r.blob())
+    filename = `photo-${ts}.jpg`
+    if (videoBlob) {
+      const vUrl = URL.createObjectURL(videoBlob)
+      const va = document.createElement('a')
+      va.href = vUrl; va.download = `photo-${ts}.webm`; va.click()
+      setTimeout(() => URL.revokeObjectURL(vUrl), 2000)
     }
-  } catch {
-    files.forEach((file, i) => {
-      const url = URL.createObjectURL(file)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = file.name
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000 * (i + 1))
-    })
   }
 
-  photoSaved.value = true
-  setTimeout(() => { showPreview.value = false }, 1200)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
 
 function handleFlip() {
@@ -349,23 +327,16 @@ const galleryTheme = computed(() => theme.value)
         <!-- Flash -->
         <div v-if="flash" class="flash-overlay" />
 
-        <!-- Preview -->
-        <div v-if="showPreview && previewDataUrl" class="preview-wrap" @click.self="showPreview = false">
+        <!-- REC indicator -->
+        <div v-if="isRecording" class="rec-indicator">
+          <div class="rec-dot" />
+          REC
+        </div>
+
+        <!-- Preview (auto-dismisses, no button) -->
+        <div v-if="showPreview && previewDataUrl" class="preview-wrap">
           <div class="preview-card">
             <img :src="previewDataUrl" class="preview-img" alt="captured" />
-            <div v-if="photoSaved" class="preview-label">{{ t('booth.saved') }}</div>
-            <div v-else-if="!videoReady" class="preview-label preview-label--loading">…</div>
-            <button
-              v-else
-              class="preview-save-btn"
-              :style="{ background: theme.accent }"
-              @click="handleSavePhoto"
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-              </svg>
-              {{ pendingVideoBlob?.type.includes('mp4') ? t('booth.saveMotionPhoto') : pendingVideoBlob ? t('booth.savePhotoVideo') : t('booth.saveToPhotos') }}
-            </button>
           </div>
         </div>
       </div>
@@ -725,32 +696,36 @@ const galleryTheme = computed(() => theme.value)
   object-fit: cover;
   display: block;
 }
-.preview-save-btn {
-  width: 100%;
+/* ── REC indicator ── */
+.rec-indicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 15;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 5px;
-  padding: 7px 6px;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  cursor: pointer;
-  border: none;
-  line-height: 1;
-}
-.preview-label {
-  background: rgba(0,0,0,0.65);
+  background: rgba(0,0,0,0.52);
   backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 4px 10px 4px 7px;
   color: #fff;
-  font-size: 10px;
-  text-align: center;
-  padding: 7px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  pointer-events: none;
 }
-.preview-label--loading {
-  opacity: 0.5;
-  letter-spacing: 2px;
+.rec-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3333;
+  flex-shrink: 0;
+  animation: rec-pulse 0.9s ease-in-out infinite;
+}
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
 }
 
 /* Bottom controls */
