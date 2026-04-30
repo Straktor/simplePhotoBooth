@@ -26,6 +26,7 @@ export default {
     retry: 'Retry',
     tapToCancel: 'tap to cancel',
     saveToPhotos: 'Save to Photos',
+    saveMotionPhoto: 'Save Motion Photo',
     savePhotoVideo: 'Save Photo & Video',
     saved: '✓ Saved',
   },

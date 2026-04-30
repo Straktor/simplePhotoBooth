@@ -6,6 +6,7 @@ import { useCountdown } from '@/composables/useCountdown'
 import { useSettings } from '@/composables/useSettings'
 import { resolveTheme, FONTS } from '@/themes'
 import type { CustomThemeVariants } from '@/themes'
+import { createMotionPhoto } from '@/composables/useCamera'
 import ThemeDecorations from '@/components/ThemeDecorations.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import CustomThemeView from '@/views/CustomThemeView.vue'
@@ -97,14 +98,25 @@ async function handleSavePhoto() {
   if (!previewDataUrl.value) return
 
   const ts = Date.now()
-  const files: File[] = []
+  let files: File[]
 
-  const jpegBlob = await (await fetch(previewDataUrl.value)).blob()
-  files.push(new File([jpegBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' }))
-
-  if (pendingVideoBlob.value) {
-    const ext = pendingVideoBlob.value.type.includes('mp4') ? 'mp4' : 'webm'
-    files.push(new File([pendingVideoBlob.value], `photo-${ts}.${ext}`, { type: pendingVideoBlob.value.type }))
+  const video = pendingVideoBlob.value
+  if (video && video.type.includes('mp4')) {
+    // Embed MP4 inside the JPEG → Google Photos Motion Photo
+    const motionBlob = await createMotionPhoto(previewDataUrl.value, video)
+    files = [new File([motionBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' })]
+  } else if (video) {
+    // WebM (desktop): share as two separate files
+    const jpegBlob = await fetch(previewDataUrl.value).then(r => r.blob())
+    const ext = 'webm'
+    files = [
+      new File([jpegBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' }),
+      new File([video], `photo-${ts}.${ext}`, { type: video.type }),
+    ]
+  } else {
+    // Photo only
+    const jpegBlob = await fetch(previewDataUrl.value).then(r => r.blob())
+    files = [new File([jpegBlob], `photo-${ts}.jpg`, { type: 'image/jpeg' })]
   }
 
   try {
@@ -114,13 +126,13 @@ async function handleSavePhoto() {
       throw new Error('share unsupported')
     }
   } catch {
-    files.forEach(file => {
+    files.forEach((file, i) => {
       const url = URL.createObjectURL(file)
       const a = document.createElement('a')
       a.href = url
       a.download = file.name
       a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setTimeout(() => URL.revokeObjectURL(url), 1000 * (i + 1))
     })
   }
 
@@ -352,7 +364,7 @@ const galleryTheme = computed(() => theme.value)
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
               </svg>
-              {{ pendingVideoBlob ? t('booth.savePhotoVideo') : t('booth.saveToPhotos') }}
+              {{ pendingVideoBlob?.type.includes('mp4') ? t('booth.saveMotionPhoto') : pendingVideoBlob ? t('booth.savePhotoVideo') : t('booth.saveToPhotos') }}
             </button>
           </div>
         </div>

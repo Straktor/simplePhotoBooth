@@ -1,6 +1,58 @@
 import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 
+// Inject an XMP APP1 segment immediately after the JPEG SOI marker
+function injectXmp(jpeg: Uint8Array, xmpStr: string): Uint8Array {
+  const ns = 'http://ns.adobe.com/xap/1.0/\0'
+  const payload = new TextEncoder().encode(ns + xmpStr)
+  const segLen = 2 + payload.length       // JPEG length field includes its own 2 bytes
+  const app1  = new Uint8Array(4 + payload.length)
+  app1[0] = 0xFF; app1[1] = 0xE1         // APP1 marker
+  app1[2] = (segLen >> 8) & 0xFF
+  app1[3] =  segLen       & 0xFF
+  app1.set(payload, 4)
+  const out = new Uint8Array(jpeg.length + app1.length)
+  out.set(jpeg.slice(0, 2))              // SOI (FF D8)
+  out.set(app1, 2)
+  out.set(jpeg.slice(2), 2 + app1.length)
+  return out
+}
+
+// Combine a JPEG and an MP4 into a single file that Google Photos
+// recognises as a Motion Photo (MicroVideo v1 format).
+export async function createMotionPhoto(jpegDataUrl: string, mp4Blob: Blob): Promise<Blob> {
+  const [jpegBuf, videoBuf] = await Promise.all([
+    fetch(jpegDataUrl).then(r => r.arrayBuffer()),
+    mp4Blob.arrayBuffer(),
+  ])
+  const jpeg  = new Uint8Array(jpegBuf)
+  const video = new Uint8Array(videoBuf)
+
+  const xmp = [
+    `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>`,
+    `<x:xmpmeta xmlns:x="adobe:ns:meta/">`,
+    `<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">`,
+    `<rdf:Description rdf:about=""`,
+    ` xmlns:Camera="http://ns.google.com/photos/1.0/camera/"`,
+    ` Camera:MotionPhoto="1"`,
+    ` Camera:MotionPhotoVersion="1"`,
+    ` Camera:MotionPhotoPresentationTimestampUs="-1"`,
+    ` Camera:MicroVideo="1"`,
+    ` Camera:MicroVideoVersion="1"`,
+    ` Camera:MicroVideoOffset="${video.length}"`,
+    ` Camera:MicroVideoPresentationTimestampUs="-1"`,
+    `/>`,
+    `</rdf:RDF></x:xmpmeta>`,
+    `<?xpacket end="w"?>`,
+  ].join('')
+
+  const jpegWithXmp = injectXmp(jpeg, xmp)
+  const combined = new Uint8Array(jpegWithXmp.length + video.length)
+  combined.set(jpegWithXmp, 0)
+  combined.set(video, jpegWithXmp.length)
+  return new Blob([combined], { type: 'image/jpeg' })
+}
+
 function getSupportedVideoMime(): string {
   if (typeof MediaRecorder === 'undefined') return ''
   const types = [

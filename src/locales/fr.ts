@@ -26,6 +26,7 @@ export default {
     retry: 'Réessayer',
     tapToCancel: 'appuyer pour annuler',
     saveToPhotos: 'Enregistrer dans Photos',
+    saveMotionPhoto: 'Enregistrer en photo animée',
     savePhotoVideo: 'Enregistrer photo & vidéo',
     saved: '✓ Enregistré',
   },
