@@ -24,6 +24,7 @@ const previewDataUrl = ref<string | null>(null)
 const showPreview = ref(false)
 const isRecording = ref(false)
 const isFront = ref(true)
+const playbackVideoUrl = ref<string | null>(null)
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -61,8 +62,13 @@ onMounted(() => startCamera())
 async function handleShoot() {
   if (isRunning.value) return
 
+  if (playbackVideoUrl.value) {
+    URL.revokeObjectURL(playbackVideoUrl.value)
+    playbackVideoUrl.value = null
+  }
+
   const preMs = 1500
-  const postMs = 500
+  const postMs = 1500
   const recordDelay = Math.max(0, settings.countdownDuration * 1000 - preMs)
   const recTimer = setTimeout(() => {
     startRecording()
@@ -89,6 +95,9 @@ async function handleShoot() {
     isRecording.value = false
     addPhoto(dataUrl, !!videoBlob)
     autoSave(dataUrl, videoBlob)
+    if (videoBlob) {
+      playbackVideoUrl.value = URL.createObjectURL(videoBlob)
+    }
     setTimeout(() => { showPreview.value = false }, 1200)
   }, postMs)
 }
@@ -267,10 +276,22 @@ const galleryTheme = computed(() => theme.value)
           <div class="focus-ring" />
           <!-- Live video -->
           <video
+            v-show="!playbackVideoUrl"
             ref="videoRef"
             class="camera-video"
             :style="{ transform: mirrorStyle }"
             autoplay
+            playsinline
+            muted
+          />
+          <!-- Playback video -->
+          <video
+            v-if="playbackVideoUrl"
+            class="camera-video"
+            :src="playbackVideoUrl"
+            :style="{ transform: mirrorStyle }"
+            autoplay
+            loop
             playsinline
             muted
           />
