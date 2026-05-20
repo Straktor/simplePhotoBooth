@@ -25,11 +25,24 @@ const showPreview = ref(false)
 const isRecording = ref(false)
 const isFront = ref(true)
 const playbackVideoUrl = ref<string | null>(null)
+const playbackCount = ref(0)
 
 const videoRef = ref<HTMLVideoElement | null>(null)
+const playbackVideoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-const { isCameraReady, error, startCamera, flipCamera, capturePhoto, startRecording, stopRecording } = useCamera(videoRef, canvasRef)
+const {
+  isCameraReady,
+  error,
+  devices,
+  selectedDeviceId,
+  startCamera,
+  flipCamera,
+  updateDeviceId,
+  capturePhoto,
+  startRecording,
+  stopRecording
+} = useCamera(videoRef, canvasRef)
 const { count: countdown, isRunning, start: startCountdown, cancel: cancelCountdown } = useCountdown()
 
 const activeKey = computed(() => settings.activeThemeKey)
@@ -65,6 +78,7 @@ async function handleShoot() {
   if (playbackVideoUrl.value) {
     URL.revokeObjectURL(playbackVideoUrl.value)
     playbackVideoUrl.value = null
+    playbackCount.value = 0
   }
 
   const preMs = 1500
@@ -87,7 +101,6 @@ async function handleShoot() {
   flash.value = true
   const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value)
   previewDataUrl.value = dataUrl
-  showPreview.value = true
   setTimeout(() => { flash.value = false }, 400)
 
   setTimeout(async () => {
@@ -96,10 +109,28 @@ async function handleShoot() {
     addPhoto(dataUrl, !!videoBlob)
     autoSave(dataUrl, videoBlob)
     if (videoBlob) {
+      playbackCount.value = 0
       playbackVideoUrl.value = URL.createObjectURL(videoBlob)
+      setTimeout(() => {
+        if (playbackVideoRef.value) {
+          playbackVideoRef.value.play().catch(() => {})
+        }
+      }, 50)
     }
-    setTimeout(() => { showPreview.value = false }, 1200)
   }, postMs)
+}
+
+function handlePlaybackEnded() {
+  playbackCount.value++
+  if (playbackCount.value < 2) {
+    playbackVideoRef.value?.play().catch(() => {})
+  } else {
+    if (playbackVideoUrl.value) {
+      URL.revokeObjectURL(playbackVideoUrl.value)
+      playbackVideoUrl.value = null
+    }
+    playbackCount.value = 0
+  }
 }
 
 async function autoSave(jpegDataUrl: string, videoBlob: Blob | null) {
@@ -160,6 +191,8 @@ const galleryTheme = computed(() => theme.value)
     :dark-mode="settings.darkMode"
     :font-family="settings.fontFamily"
     :language="settings.language"
+    :devices="devices"
+    :selected-device-id="selectedDeviceId"
     @back="screen = 'booth'"
     @select-theme="handleSelectTheme"
     @edit-custom="screen = 'customTheme'"
@@ -169,6 +202,7 @@ const galleryTheme = computed(() => theme.value)
     @update-dark-mode="(v) => update({ darkMode: v })"
     @update-font="(v) => update({ fontFamily: v })"
     @update-language="(v) => update({ language: v })"
+    @update-device-id="updateDeviceId"
     @reset="reset"
   />
 
@@ -196,6 +230,9 @@ const galleryTheme = computed(() => theme.value)
   >
     <!-- Decorations -->
     <ThemeDecorations v-if="!isFullscreen" :theme-key="activeKey" :dark-mode="settings.darkMode" />
+
+    <!-- Full-screen screen flash -->
+    <div v-if="flash" class="flash-overlay" />
 
     <!-- Top bar -->
     <div class="topbar" :class="{ 'topbar--fs': isFullscreen }">
@@ -286,15 +323,25 @@ const galleryTheme = computed(() => theme.value)
           />
           <!-- Playback video -->
           <video
-            v-if="playbackVideoUrl"
+            v-show="playbackVideoUrl"
+            ref="playbackVideoRef"
             class="camera-video"
-            :src="playbackVideoUrl"
+            style="z-index: 10;"
+            :src="playbackVideoUrl || ''"
             :style="{ transform: mirrorStyle }"
             autoplay
-            loop
             playsinline
             muted
+            @ended="handlePlaybackEnded"
           />
+        </div>
+
+        <!-- Playback indicator -->
+        <div v-if="playbackVideoUrl" class="rec-indicator" style="background: rgba(30,130,255,0.7); z-index: 15;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-right: 2px;">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          PLAYBACK
         </div>
 
         <!-- Start camera overlay -->
@@ -345,8 +392,7 @@ const galleryTheme = computed(() => theme.value)
           <div class="countdown-hint">{{ t('booth.tapToCancel') }}</div>
         </div>
 
-        <!-- Flash -->
-        <div v-if="flash" class="flash-overlay" />
+
 
         <!-- REC indicator -->
         <div v-if="isRecording" class="rec-indicator">
@@ -687,9 +733,9 @@ const galleryTheme = computed(() => theme.value)
 .countdown-hint { color: rgba(255,255,255,0.45); font-size: 12px; }
 
 .flash-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 9999;
   background: #fff;
   animation: flash-anim 0.4s ease-out forwards;
   pointer-events: none;

@@ -26,15 +26,23 @@ import { RouterLink } from 'vue-router'
 
 <style scoped>
 .home {
+  --color-primary: #7c6fff;
+  --color-accent: #ff6b9d;
+  --color-bg: #09090f;
+  --color-text: #f0eeff;
+  --color-text-muted: rgba(240, 238, 255, 0.4);
+  --transition: 0.2s ease-in-out;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
   flex: 1;
   gap: 2.5rem;
   padding: 2rem 1.5rem;
   position: relative;
   overflow: hidden;
+  background: var(--color-bg);
 }
 
 .glow {

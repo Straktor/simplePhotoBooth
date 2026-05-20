@@ -1,8 +1,10 @@
 import { reactive, readonly, watch } from 'vue'
 import type { CustomThemeVariants } from '@/themes'
 import { i18n } from '@/i18n'
+import { getAllPhotos, addPhotoToDb, deletePhotoFromDb } from '@/utils/db'
 
 export interface PhotoEntry {
+  id?: number
   url: string
   motion?: boolean
 }
@@ -67,7 +69,40 @@ const settings = reactive<AppSettings>({
   ...DEFAULT_SETTINGS,
   ...stored,
   customThemeCfg: migrateCustomTheme(stored.customThemeCfg),
-  capturedPhotos: migratePhotos((stored as any).capturedPhotos),
+  capturedPhotos: [], // start empty, load from IndexedDB asynchronously
+})
+
+// Load photos asynchronously from IndexedDB and handle migration on startup
+getAllPhotos().then(async (dbPhotos) => {
+  // If there are migrated photos in localStorage, add them first
+  const localPhotos = migratePhotos((stored as any).capturedPhotos)
+  if (localPhotos.length > 0) {
+    for (const photo of localPhotos) {
+      try {
+        const id = await addPhotoToDb({ url: photo.url, motion: photo.motion })
+        settings.capturedPhotos.push({ id, url: photo.url, motion: photo.motion })
+      } catch (e) {
+        console.error('Failed to migrate photo to IndexedDB', e)
+        settings.capturedPhotos.push({ url: photo.url, motion: photo.motion })
+      }
+    }
+    // Clear capturedPhotos from localStorage to prevent re-migration
+    try {
+      const { capturedPhotos, ...cleanStored } = stored as any
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanStored))
+    } catch {
+      // ignore
+    }
+  }
+
+  // Then add all photos from DB that aren't already there
+  dbPhotos.forEach((p) => {
+    if (!settings.capturedPhotos.some((existing) => existing.id === p.id)) {
+      settings.capturedPhotos.push(p)
+    }
+  })
+}).catch((err) => {
+  console.error('Failed to load photos from IndexedDB', err)
 })
 
 watch(() => settings.language, (lang) => {
@@ -76,7 +111,8 @@ watch(() => settings.language, (lang) => {
 
 watch(settings, (val) => {
   try {
-    const toSave = { ...val, capturedPhotos: val.capturedPhotos.slice(-50) }
+    // Exclude capturedPhotos from localStorage watch serialization
+    const { capturedPhotos, ...toSave } = val
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   } catch {
     // quota exceeded
@@ -93,14 +129,33 @@ export function useSettings() {
     Object.assign(settings.customThemeCfg.light, variants.light)
   }
 
-  function addPhoto(url: string, motion?: boolean) {
-    settings.capturedPhotos.push({ url, motion })
+  async function addPhoto(url: string, motion?: boolean) {
+    const photoData = { url, motion }
+    try {
+      const id = await addPhotoToDb(photoData)
+      settings.capturedPhotos.push({ id, ...photoData })
+    } catch (e) {
+      console.error('Failed to save photo to IndexedDB', e)
+      // fallback to push in memory anyway so user sees it in session
+      settings.capturedPhotos.push(photoData)
+    }
   }
 
-  function removePhotos(indices: number[]) {
+  async function removePhotos(indices: number[]) {
     const toRemove = new Set(indices)
+    // Go backwards to avoid index shift
     for (let i = settings.capturedPhotos.length - 1; i >= 0; i--) {
-      if (toRemove.has(i)) settings.capturedPhotos.splice(i, 1)
+      if (toRemove.has(i)) {
+        const photo = settings.capturedPhotos[i]
+        if (photo.id !== undefined) {
+          try {
+            await deletePhotoFromDb(photo.id)
+          } catch (e) {
+            console.error('Failed to delete photo from IndexedDB', e)
+          }
+        }
+        settings.capturedPhotos.splice(i, 1)
+      }
     }
   }
 

@@ -53,18 +53,52 @@ export async function createMotionPhoto(jpegDataUrl: string, mp4Blob: Blob): Pro
   return new Blob([combined], { type: 'image/jpeg' })
 }
 
-function getSupportedVideoMime(): string {
-  if (typeof MediaRecorder === 'undefined') return ''
-  const types = [
-    'video/mp4;codecs=avc1',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-  ]
-  return types.find(t => { try { return MediaRecorder.isTypeSupported(t) } catch { return false } }) ?? ''
+function getCandidateMimeTypes(stream: MediaStream): string[] {
+  const hasAudio = stream.getAudioTracks().length > 0
+  const hasVideo = stream.getVideoTracks().length > 0
+
+  if (hasVideo && hasAudio) {
+    return [
+      'video/mp4;codecs=avc1,mp4a.40.2',
+      'video/mp4',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+    ]
+  } else if (hasVideo) {
+    return [
+      'video/mp4;codecs=avc1',
+      'video/mp4',
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm',
+    ]
+  } else if (hasAudio) {
+    return [
+      'audio/webm;codecs=opus',
+      'audio/ogg;codecs=opus',
+      'audio/webm',
+    ]
+  }
+  return []
 }
 
+function getSupportedVideoMime(stream: MediaStream | null): string {
+  if (typeof MediaRecorder === 'undefined' || !stream) return ''
+  const types = getCandidateMimeTypes(stream)
+  for (const mime of types) {
+    try {
+      if (MediaRecorder.isTypeSupported(mime)) {
+        // Test instantiation to verify the browser can actually encode this format
+        new MediaRecorder(stream, { mimeType: mime })
+        return mime
+      }
+    } catch (e) {
+      console.warn(`MIME type ${mime} is supported according to isTypeSupported but failed to instantiate MediaRecorder:`, e)
+    }
+  }
+  return ''
+}
 export function useCamera(
   videoRef: Ref<HTMLVideoElement | null>,
   canvasRef: Ref<HTMLCanvasElement | null>,
@@ -77,6 +111,19 @@ export function useCamera(
   const mediaRecorder = ref<MediaRecorder | null>(null)
   const recordingChunks: Blob[] = []
 
+  const devices = ref<MediaDeviceInfo[]>([])
+  const selectedDeviceId = ref<string>('')
+
+  async function enumerateDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return
+    try {
+      const allDevices = await navigator.mediaDevices.enumerateDevices()
+      devices.value = allDevices.filter(d => d.kind === 'videoinput')
+    } catch (err) {
+      console.error('Error enumerating devices:', err)
+    }
+  }
+
   async function startCamera() {
     error.value = null
     isCameraReady.value = false
@@ -88,10 +135,29 @@ export function useCamera(
     }
 
     try {
-      stream.value = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingMode.value, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      })
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+
+      if (selectedDeviceId.value) {
+        videoConstraints.deviceId = { exact: selectedDeviceId.value }
+      } else {
+        videoConstraints.facingMode = facingMode.value
+      }
+
+      try {
+        stream.value = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: true,
+        })
+      } catch (audioErr) {
+        console.warn('Audio capture failed or was denied, falling back to video only:', audioErr)
+        stream.value = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false,
+        })
+      }
 
       const video = videoRef.value
       if (!video) return
@@ -102,6 +168,9 @@ export function useCamera(
       })
       await video.play()
       isCameraReady.value = true
+
+      // Fetch the full device list (with labels, now that permission is granted)
+      await enumerateDevices()
     } catch (err) {
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
         error.value = 'Camera permission denied. Please allow camera access and try again.'
@@ -121,7 +190,13 @@ export function useCamera(
   }
 
   async function flipCamera() {
+    selectedDeviceId.value = '' // Clear selected device to toggle front/back
     facingMode.value = facingMode.value === 'user' ? 'environment' : 'user'
+    await startCamera()
+  }
+
+  async function updateDeviceId(id: string) {
+    selectedDeviceId.value = id
     await startCamera()
   }
 
@@ -173,15 +248,16 @@ export function useCamera(
 
   function startRecording() {
     if (!stream.value) return
-    const mimeType = getSupportedVideoMime()
-    if (!mimeType) return
     recordingChunks.length = 0
     try {
-      const rec = new MediaRecorder(stream.value, { mimeType })
+      const mime = getSupportedVideoMime(stream.value)
+      const options = mime ? { mimeType: mime } : undefined
+      const rec = new MediaRecorder(stream.value, options)
       rec.ondataavailable = (e) => { if (e.data.size > 0) recordingChunks.push(e.data) }
-      rec.start(100)
+      rec.start()
       mediaRecorder.value = rec
-    } catch {
+    } catch (err) {
+      console.error('Failed to start MediaRecorder:', err)
       mediaRecorder.value = null
     }
   }
@@ -190,13 +266,31 @@ export function useCamera(
     return new Promise((resolve) => {
       const rec = mediaRecorder.value
       if (!rec || rec.state === 'inactive') { resolve(null); return }
+      
+      let resolved = false
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true
+          resolve(null)
+        }
+      }, 1500)
+
       rec.onstop = () => {
+        if (resolved) return
+        resolved = true
+        clearTimeout(timeout)
         const blob = recordingChunks.length ? new Blob(recordingChunks, { type: rec.mimeType }) : null
         recordingChunks.length = 0
         mediaRecorder.value = null
         resolve(blob)
       }
-      try { rec.stop() } catch { resolve(null) }
+      try { rec.stop() } catch { 
+        if (!resolved) {
+          resolved = true
+          clearTimeout(timeout)
+          resolve(null)
+        }
+      }
     })
   }
 
@@ -213,9 +307,13 @@ export function useCamera(
     error,
     lastPhoto,
     facingMode,
+    devices,
+    selectedDeviceId,
     startCamera,
     stopCamera,
     flipCamera,
+    updateDeviceId,
+    enumerateDevices,
     capturePhoto,
     downloadPhoto,
     savePhoto,

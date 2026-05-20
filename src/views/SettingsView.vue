@@ -16,6 +16,8 @@ const props = defineProps<{
   darkMode: boolean
   fontFamily: string
   language: string
+  devices: MediaDeviceInfo[]
+  selectedDeviceId: string
 }>()
 
 const emit = defineEmits<{
@@ -28,6 +30,7 @@ const emit = defineEmits<{
   updateDarkMode: [val: boolean]
   updateFont: [key: string]
   updateLanguage: [lang: string]
+  updateDeviceId: [id: string]
   reset: []
 }>()
 
@@ -209,6 +212,31 @@ const LANGUAGES = [
             <div class="toggle-knob" :style="{ transform: mirrorPreview ? 'translateX(20px)' : 'translateX(0)' }" />
           </div>
         </div>
+
+        <template v-if="devices && devices.length > 0">
+          <div class="divider" :style="{ background: t2.border }" />
+          <div class="row">
+            <span class="row-label">{{ t('settings.chooseCamera') }}</span>
+            <select
+              class="inline-select"
+              :value="selectedDeviceId"
+              :style="{ color: t2.text, fontFamily: t2.font }"
+              @change="emit('updateDeviceId', ($event.target as HTMLSelectElement).value)"
+            >
+              <option value="">{{ t('settings.defaultCamera') }}</option>
+              <option v-for="d in devices" :key="d.deviceId" :value="d.deviceId">
+                {{ d.label || `Camera ${d.deviceId.slice(0, 5)}...` }}
+              </option>
+            </select>
+          </div>
+        </template>
+
+        <div class="divider" :style="{ background: t2.border }" />
+        <div class="row row--notice">
+          <p class="notice-text" :style="{ color: t2.textMuted }">
+            {{ t('settings.motionPhotoNotice') }}
+          </p>
+        </div>
       </div>
 
       <!-- COUNTDOWN -->
@@ -366,6 +394,30 @@ const LANGUAGES = [
 }
 .inline-input::placeholder {
   opacity: 0.3;
+}
+
+.inline-select {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-weight: 500;
+  text-align-last: right;
+  padding: 4px 0;
+  cursor: pointer;
+  max-width: 60%;
+}
+
+.row--notice {
+  min-height: auto;
+  padding: 8px 16px 12px 16px;
+}
+
+.notice-text {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+  text-align: left;
 }
 
 /* ── Segmented control ── */
