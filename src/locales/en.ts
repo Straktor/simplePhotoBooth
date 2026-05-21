@@ -44,6 +44,15 @@ export default {
     nSelected: '{count} selected',
     save: 'Save | Save ({count})',
     delete: 'Delete | Delete ({count})',
+    longPressHint: 'Long press to select',
+    viewer: {
+      playVideo: 'Play Motion',
+      videoUnavailable: 'Video not available',
+      share: 'Share',
+      download: 'Download',
+      delete: 'Delete',
+      justNow: 'now',
+    },
   },
   customTheme: {
     title: 'Design Your Theme',

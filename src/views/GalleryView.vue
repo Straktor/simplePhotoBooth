@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ResolvedTheme } from '@/themes'
 import type { PhotoEntry } from '@/composables/useSettings'
+import PhotoViewer from '@/components/PhotoViewer.vue'
 
 const { t } = useI18n()
 
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 
 const selectMode = ref(false)
 const selected = ref(new Set<number>())
+const viewerIndex = ref<number | null>(null)
 
 const displayPhotos = computed(() =>
   props.photos.map((p, i) => ({ ...p, origIndex: i })).reverse()
@@ -26,9 +28,43 @@ const displayPhotos = computed(() =>
 const selectedCount = computed(() => selected.value.size)
 const allSelected = computed(() => selectedCount.value === props.photos.length && props.photos.length > 0)
 
-function enterSelectWith(origIndex: number) {
-  selectMode.value = true
-  selected.value = new Set([origIndex])
+// Long-press handling
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let longPressTriggered = false
+
+function onPointerDown(origIndex: number) {
+  longPressTriggered = false
+  longPressTimer = setTimeout(() => {
+    longPressTriggered = true
+    if (!selectMode.value) {
+      selectMode.value = true
+      selected.value = new Set([origIndex])
+    } else {
+      toggleItem(origIndex)
+    }
+  }, 400)
+}
+
+function onPointerUp(origIndex: number) {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+  if (longPressTriggered) return
+  // Regular tap
+  if (selectMode.value) {
+    toggleItem(origIndex)
+  } else {
+    // Open viewer — find the index in the original (non-reversed) array
+    viewerIndex.value = origIndex
+  }
+}
+
+function onPointerLeave() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
 }
 
 function exitSelect() {
@@ -40,6 +76,7 @@ function toggleItem(origIndex: number) {
   const s = new Set(selected.value)
   s.has(origIndex) ? s.delete(origIndex) : s.add(origIndex)
   selected.value = s
+  if (s.size === 0) exitSelect()
 }
 
 function toggleAll() {
@@ -76,6 +113,29 @@ function deleteSelected() {
   emit('deletePhotos', [...selected.value])
   exitSelect()
 }
+
+function handleViewerDelete(origIndex: number) {
+  emit('deletePhotos', [origIndex])
+  // If no photos left, close viewer
+  if (props.photos.length <= 1) {
+    viewerIndex.value = null
+  } else if (origIndex >= props.photos.length - 1) {
+    viewerIndex.value = props.photos.length - 2
+  }
+}
+
+function relativeTime(ts?: number): string {
+  if (!ts) return ''
+  const diff = Date.now() - ts
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return t('gallery.viewer.justNow')
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr}h`
+  const day = Math.floor(hr / 24)
+  return `${day}d`
+}
 </script>
 
 <template>
@@ -90,7 +150,10 @@ function deleteSelected() {
           </svg>
           {{ t('settings.back') }}
         </button>
-        <span class="hdr-title" :style="{ color: theme.primary }">{{ t('gallery.title') }}</span>
+        <div class="hdr-center">
+          <span class="hdr-title" :style="{ color: theme.primary }">{{ t('gallery.title') }}</span>
+          <span v-if="photos.length > 0" class="hdr-subtitle" :style="{ color: theme.textMuted }">{{ photos.length }} {{ photos.length === 1 ? 'photo' : 'photos' }}</span>
+        </div>
         <button class="hdr-btn hdr-btn--right" :style="{ color: theme.primary }" @click="selectMode = true">
           {{ t('gallery.select') }}
         </button>
@@ -99,13 +162,20 @@ function deleteSelected() {
         <button class="hdr-btn" :style="{ color: theme.primary }" @click="exitSelect">
           {{ t('gallery.cancel') }}
         </button>
-        <span class="hdr-title">
-          {{ selectedCount > 0 ? t('gallery.nSelected', selectedCount) : t('gallery.title') }}
-        </span>
+        <div class="hdr-center">
+          <span class="hdr-title">
+            {{ selectedCount > 0 ? t('gallery.nSelected', selectedCount) : t('gallery.title') }}
+          </span>
+        </div>
         <button class="hdr-btn hdr-btn--right" :style="{ color: theme.primary }" @click="toggleAll">
           {{ allSelected ? t('gallery.none') : t('gallery.all') }}
         </button>
       </template>
+    </div>
+
+    <!-- Hint banner -->
+    <div v-if="photos.length > 0 && !selectMode" class="hint-banner" :style="{ color: theme.textMuted }">
+      {{ t('gallery.longPressHint') }}
     </div>
 
     <!-- Grid -->
@@ -125,15 +195,23 @@ function deleteSelected() {
           :key="item.origIndex"
           class="thumb"
           :class="{ 'thumb--selected': selectMode && selected.has(item.origIndex) }"
-          @click="selectMode ? toggleItem(item.origIndex) : enterSelectWith(item.origIndex)"
+          @pointerdown.prevent="onPointerDown(item.origIndex)"
+          @pointerup="onPointerUp(item.origIndex)"
+          @pointerleave="onPointerLeave"
+          @contextmenu.prevent
         >
           <img :src="item.url" alt="" loading="lazy" />
 
           <!-- Motion badge -->
-          <div v-if="item.motion" class="motion-badge">
+          <div v-if="item.motion || item.hasVideo" class="motion-badge">
             <svg width="7" height="7" viewBox="0 0 10 10" fill="white">
               <polygon points="2,1 9,5 2,9"/>
             </svg>
+          </div>
+
+          <!-- Timestamp -->
+          <div v-if="item.createdAt" class="thumb-time">
+            {{ relativeTime(item.createdAt) }}
           </div>
 
           <!-- Select overlay -->
@@ -183,6 +261,15 @@ function deleteSelected() {
       </div>
     </Transition>
 
+    <!-- Full-screen viewer -->
+    <PhotoViewer
+      v-if="viewerIndex !== null"
+      :photos="photos"
+      :initial-index="viewerIndex"
+      :theme="theme"
+      @close="viewerIndex = null"
+      @delete="handleViewerDelete"
+    />
   </div>
 </template>
 
@@ -226,10 +313,29 @@ function deleteSelected() {
   justify-content: flex-end;
   font-weight: 600;
 }
+.hdr-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
 .hdr-title {
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.3px;
+}
+.hdr-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Hint ── */
+.hint-banner {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0 16px 8px;
+  opacity: 0.6;
 }
 
 /* ── Grid ── */
@@ -266,6 +372,9 @@ function deleteSelected() {
   cursor: pointer;
   position: relative;
   transition: transform 0.12s;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 .thumb--selected {
   transform: scale(0.94);
@@ -275,6 +384,7 @@ function deleteSelected() {
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
 }
 
 /* ── Motion badge ── */
@@ -291,6 +401,21 @@ function deleteSelected() {
   align-items: center;
   justify-content: center;
   padding-left: 1px;
+}
+
+/* ── Timestamp ── */
+.thumb-time {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 1px 6px;
+  line-height: 1.4;
 }
 
 /* ── Select overlay ── */

@@ -1,11 +1,12 @@
 const DB_NAME = 'photobooth-db'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const STORE_NAME = 'photos'
 
 export interface DbPhoto {
   id?: number
   url: string
   motion?: boolean
+  videoBlob?: Blob | null
   createdAt?: number
 }
 
@@ -19,6 +20,7 @@ export function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true })
       }
+      // v1 → v2: no structural changes needed, videoBlob is just a new optional field
     }
   })
 }
@@ -34,12 +36,23 @@ export async function getAllPhotos(): Promise<DbPhoto[]> {
   })
 }
 
+export async function getPhotoById(id: number): Promise<DbPhoto | undefined> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readonly')
+    const store = transaction.objectStore(STORE_NAME)
+    const request = store.get(id)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+
 export async function addPhotoToDb(photo: Omit<DbPhoto, 'id'>): Promise<number> {
   const db = await openDb()
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite')
     const store = transaction.objectStore(STORE_NAME)
-    const request = store.add(photo)
+    const request = store.add({ ...photo, createdAt: photo.createdAt ?? Date.now() })
     request.onsuccess = () => resolve(request.result as number)
     request.onerror = () => reject(request.error)
   })

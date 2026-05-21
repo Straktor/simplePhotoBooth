@@ -44,6 +44,15 @@ export default {
     nSelected: '{count} sélectionné | {count} sélectionnés',
     save: 'Enregistrer | Enregistrer ({count})',
     delete: 'Supprimer | Supprimer ({count})',
+    longPressHint: 'Appui long pour sélectionner',
+    viewer: {
+      playVideo: 'Lire la vidéo',
+      videoUnavailable: 'Vidéo non disponible',
+      share: 'Partager',
+      download: 'Télécharger',
+      delete: 'Supprimer',
+      justNow: 'maintenant',
+    },
   },
   customTheme: {
     title: 'Personnaliser le thème',

@@ -106,7 +106,7 @@ async function handleShoot() {
   setTimeout(async () => {
     const videoBlob = await stopRecording()
     isRecording.value = false
-    addPhoto(dataUrl, !!videoBlob)
+    addPhoto(dataUrl, !!videoBlob, videoBlob)
     autoSave(dataUrl, videoBlob)
     if (videoBlob) {
       playbackCount.value = 0
@@ -334,6 +334,16 @@ const galleryTheme = computed(() => theme.value)
             muted
             @ended="handlePlaybackEnded"
           />
+          <!-- Playback visual overlay -->
+          <div v-if="playbackVideoUrl" class="playback-overlay">
+            <div class="corner corner-tl" />
+            <div class="corner corner-tr" />
+            <div class="corner corner-bl" />
+            <div class="corner corner-br" />
+            <div class="playback-progress">
+              <div class="playback-progress-bar" />
+            </div>
+          </div>
         </div>
 
         <!-- Playback indicator -->
@@ -364,10 +374,12 @@ const galleryTheme = computed(() => theme.value)
         <!-- Flip + Fullscreen button group (normal mode only) -->
         <div v-if="!isFullscreen" class="vf-btn-group vf-btn-group--bottom">
           <button class="fs-btn" :style="fsBtnStyle" @click="handleFlip">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 7h-9"/><path d="M14 17H5"/>
-              <polyline points="15 4 20 7 15 10"/>
-              <polyline points="9 20 4 17 9 14"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>
+              <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/>
+              <circle cx="12" cy="12" r="3"/>
+              <path d="m18 22-3-3 3-3"/>
+              <path d="m6 2 3 3-3 3"/>
             </svg>
           </button>
           <button class="fs-btn" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
@@ -484,10 +496,12 @@ const galleryTheme = computed(() => theme.value)
 
       <div class="fs-right-group">
         <button class="fs-btn" style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)" @click="handleFlip">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 7h-9"/><path d="M14 17H5"/>
-            <polyline points="15 4 20 7 15 10"/>
-            <polyline points="9 20 4 17 9 14"/>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>
+            <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="m18 22-3-3 3-3"/>
+            <path d="m6 2 3 3-3 3"/>
           </svg>
         </button>
         <button class="fs-btn" style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)" @click="isFullscreen = false">
@@ -868,5 +882,65 @@ const galleryTheme = computed(() => theme.value)
   background: rgba(0,0,0,0.38) !important;
   border: 1px solid rgba(255,255,255,0.16) !important;
   color: rgba(255,255,255,0.88) !important;
+}
+
+/* Playback overlay styles */
+.playback-overlay {
+  position: absolute;
+  inset: 60px;
+  pointer-events: none;
+  z-index: 12;
+}
+.corner {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  border: 12px solid #ffffff;
+  pointer-events: none;
+}
+.corner-tl {
+  top: 0; left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 12px;
+}
+.corner-tr {
+  top: 0; right: 0;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 12px;
+}
+.corner-bl {
+  bottom: 0; left: 0;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 12px;
+}
+.corner-br {
+  bottom: 0; right: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 12px;
+}
+.playback-progress {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.playback-progress-bar {
+  height: 100%;
+  background: #ffffff;
+  width: 0;
+  animation: playback-timeline 3s linear infinite;
+}
+@keyframes playback-timeline {
+  from { width: 0%; }
+  to { width: 100%; }
 }
 </style>

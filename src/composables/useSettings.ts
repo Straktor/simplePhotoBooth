@@ -1,13 +1,17 @@
 import { reactive, readonly, watch } from 'vue'
 import type { CustomThemeVariants } from '@/themes'
 import { i18n } from '@/i18n'
-import { getAllPhotos, addPhotoToDb, deletePhotoFromDb } from '@/utils/db'
+import { getAllPhotos, addPhotoToDb, deletePhotoFromDb, getPhotoById } from '@/utils/db'
 
 export interface PhotoEntry {
   id?: number
   url: string
   motion?: boolean
+  hasVideo?: boolean
+  createdAt?: number
 }
+
+export { getPhotoById }
 
 export interface AppSettings {
   activeThemeKey: string
@@ -129,15 +133,15 @@ export function useSettings() {
     Object.assign(settings.customThemeCfg.light, variants.light)
   }
 
-  async function addPhoto(url: string, motion?: boolean) {
-    const photoData = { url, motion }
+  async function addPhoto(url: string, motion?: boolean, videoBlob?: Blob | null) {
+    const createdAt = Date.now()
+    const dbData = { url, motion, videoBlob: videoBlob ?? null, createdAt }
     try {
-      const id = await addPhotoToDb(photoData)
-      settings.capturedPhotos.push({ id, ...photoData })
+      const id = await addPhotoToDb(dbData)
+      settings.capturedPhotos.push({ id, url, motion, hasVideo: !!videoBlob, createdAt })
     } catch (e) {
       console.error('Failed to save photo to IndexedDB', e)
-      // fallback to push in memory anyway so user sees it in session
-      settings.capturedPhotos.push(photoData)
+      settings.capturedPhotos.push({ url, motion, hasVideo: !!videoBlob, createdAt })
     }
   }
 
