@@ -102,7 +102,13 @@ getAllPhotos().then(async (dbPhotos) => {
   // Then add all photos from DB that aren't already there
   dbPhotos.forEach((p) => {
     if (!settings.capturedPhotos.some((existing) => existing.id === p.id)) {
-      settings.capturedPhotos.push(p)
+      settings.capturedPhotos.push({
+        id: p.id,
+        url: p.url,
+        motion: p.motion,
+        hasVideo: !!p.videoBlob,
+        createdAt: p.createdAt,
+      })
     }
   })
 }).catch((err) => {
