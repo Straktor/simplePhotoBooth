@@ -1,7 +1,7 @@
-import { reactive, readonly, watch } from 'vue'
+import { reactive, readonly, ref, watch } from 'vue'
 import type { CustomThemeVariants } from '@/themes'
 import { i18n } from '@/i18n'
-import { getAllPhotos, addPhotoToDb, deletePhotoFromDb, getPhotoById } from '@/utils/db'
+import { getAllPhotos, addPhotoToDb, deletePhotoFromDb, getPhotoById, getThemeAsset, setThemeAsset, deleteThemeAsset } from '@/utils/db'
 
 export interface PhotoEntry {
   id?: number
@@ -42,16 +42,28 @@ const DEFAULT_SETTINGS: AppSettings = {
   capturedPhotos: [],
 }
 
+function sanitizeBg(bg: string | null | undefined): string | null {
+  if (!bg || bg.startsWith('idb:')) return null
+  return bg
+}
+
 function migrateCustomTheme(raw: any): CustomThemeVariants {
   const def = DEFAULT_SETTINGS.customThemeCfg
   if (!raw) return def
   if (!('dark' in raw)) {
-    return { dark: { ...def.dark, ...raw }, light: { ...def.light } }
+    return {
+      dark: { ...def.dark, ...raw, bgImage: sanitizeBg(raw.bgImage) },
+      light: { ...def.light }
+    }
   }
   return {
-    dark:  { ...def.dark,  ...(raw.dark  ?? {}) },
-    light: { ...def.light, ...(raw.light ?? {}) },
+    dark:  { ...def.dark,  ...(raw.dark  ?? {}), bgImage: sanitizeBg(raw.dark?.bgImage) },
+    light: { ...def.light, ...(raw.light ?? {}), bgImage: sanitizeBg(raw.light?.bgImage) },
   }
+}
+
+function isDataUrl(str: string | null | undefined): boolean {
+  return typeof str === 'string' && (str.includes('data:') || str.startsWith('idb:'))
 }
 
 function migratePhotos(raw: any): PhotoEntry[] {
@@ -69,11 +81,74 @@ function loadFromStorage(): Partial<AppSettings> {
 }
 
 const stored = loadFromStorage()
-const settings = reactive<AppSettings>({
-  ...DEFAULT_SETTINGS,
-  ...stored,
+
+// Separate configuration settings from large photo collections in RAM
+const configSettings = reactive({
+  activeThemeKey: stored.activeThemeKey ?? DEFAULT_SETTINGS.activeThemeKey,
   customThemeCfg: migrateCustomTheme(stored.customThemeCfg),
-  capturedPhotos: [], // start empty, load from IndexedDB asynchronously
+  appTitle: stored.appTitle ?? DEFAULT_SETTINGS.appTitle,
+  countdownDuration: stored.countdownDuration ?? DEFAULT_SETTINGS.countdownDuration,
+  mirrorPreview: stored.mirrorPreview ?? DEFAULT_SETTINGS.mirrorPreview,
+  darkMode: stored.darkMode ?? DEFAULT_SETTINGS.darkMode,
+  fontFamily: stored.fontFamily ?? DEFAULT_SETTINGS.fontFamily,
+  language: stored.language ?? DEFAULT_SETTINGS.language,
+})
+
+const capturedPhotos = ref<PhotoEntry[]>([])
+
+// Unified reactive settings object matching AppSettings interface
+const settings = reactive<AppSettings>({
+  get activeThemeKey() { return configSettings.activeThemeKey },
+  set activeThemeKey(v: string) { configSettings.activeThemeKey = v },
+
+  get customThemeCfg() { return configSettings.customThemeCfg },
+  set customThemeCfg(v: CustomThemeVariants) { configSettings.customThemeCfg = v },
+
+  get appTitle() { return configSettings.appTitle },
+  set appTitle(v: string) { configSettings.appTitle = v },
+
+  get countdownDuration() { return configSettings.countdownDuration },
+  set countdownDuration(v: number) { configSettings.countdownDuration = v },
+
+  get mirrorPreview() { return configSettings.mirrorPreview },
+  set mirrorPreview(v: boolean) { configSettings.mirrorPreview = v },
+
+  get darkMode() { return configSettings.darkMode },
+  set darkMode(v: boolean) { configSettings.darkMode = v },
+
+  get fontFamily() { return configSettings.fontFamily },
+  set fontFamily(v: string) { configSettings.fontFamily = v },
+
+  get language() { return configSettings.language },
+  set language(v: string) { configSettings.language = v },
+
+  get capturedPhotos() { return capturedPhotos.value },
+  set capturedPhotos(v: PhotoEntry[]) { capturedPhotos.value = v },
+})
+
+// Hydrate custom background images from IndexedDB (or migrate from localStorage)
+Promise.all([
+  getThemeAsset('custom_bg_dark'),
+  getThemeAsset('custom_bg_light'),
+]).then(async ([darkBg, lightBg]) => {
+  const rawDark = stored.customThemeCfg?.dark?.bgImage
+  const rawLight = stored.customThemeCfg?.light?.bgImage
+
+  if (darkBg) {
+    configSettings.customThemeCfg.dark.bgImage = darkBg
+  } else if (typeof rawDark === 'string' && rawDark.includes('data:')) {
+    await setThemeAsset('custom_bg_dark', rawDark)
+    configSettings.customThemeCfg.dark.bgImage = rawDark
+  }
+
+  if (lightBg) {
+    configSettings.customThemeCfg.light.bgImage = lightBg
+  } else if (typeof rawLight === 'string' && rawLight.includes('data:')) {
+    await setThemeAsset('custom_bg_light', rawLight)
+    configSettings.customThemeCfg.light.bgImage = rawLight
+  }
+}).catch((err) => {
+  console.error('Failed to load custom theme backgrounds from IndexedDB', err)
 })
 
 // Load photos asynchronously from IndexedDB and handle migration on startup
@@ -84,15 +159,15 @@ getAllPhotos().then(async (dbPhotos) => {
     for (const photo of localPhotos) {
       try {
         const id = await addPhotoToDb({ url: photo.url, motion: photo.motion })
-        settings.capturedPhotos.push({ id, url: photo.url, motion: photo.motion })
+        capturedPhotos.value.push({ id, url: photo.url, motion: photo.motion })
       } catch (e) {
         console.error('Failed to migrate photo to IndexedDB', e)
-        settings.capturedPhotos.push({ url: photo.url, motion: photo.motion })
+        capturedPhotos.value.push({ url: photo.url, motion: photo.motion })
       }
     }
     // Clear capturedPhotos from localStorage to prevent re-migration
     try {
-      const { capturedPhotos, ...cleanStored } = stored as any
+      const { capturedPhotos: _unused, ...cleanStored } = stored as any
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanStored))
     } catch {
       // ignore
@@ -100,9 +175,10 @@ getAllPhotos().then(async (dbPhotos) => {
   }
 
   // Then add all photos from DB that aren't already there
+  const newPhotos: PhotoEntry[] = []
   dbPhotos.forEach((p) => {
-    if (!settings.capturedPhotos.some((existing) => existing.id === p.id)) {
-      settings.capturedPhotos.push({
+    if (!capturedPhotos.value.some((existing) => existing.id === p.id)) {
+      newPhotos.push({
         id: p.id,
         url: p.url,
         motion: p.motion,
@@ -111,32 +187,61 @@ getAllPhotos().then(async (dbPhotos) => {
       })
     }
   })
+  if (newPhotos.length > 0) {
+    capturedPhotos.value.push(...newPhotos)
+  }
 }).catch((err) => {
   console.error('Failed to load photos from IndexedDB', err)
 })
 
-watch(() => settings.language, (lang) => {
+watch(() => configSettings.language, (lang) => {
   i18n.global.locale = lang as any
 }, { immediate: true })
 
-watch(settings, (val) => {
+// Only deeply watches configuration settings, preventing massive memory traversing on settings change
+watch(configSettings, (toSave) => {
   try {
-    // Exclude capturedPhotos from localStorage watch serialization
-    const { capturedPhotos, ...toSave } = val
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
-  } catch {
-    // quota exceeded
+    const safeCustomCfg = {
+      dark: {
+        ...toSave.customThemeCfg.dark,
+        bgImage: isDataUrl(toSave.customThemeCfg.dark.bgImage) ? 'idb:custom_bg_dark' : toSave.customThemeCfg.dark.bgImage,
+      },
+      light: {
+        ...toSave.customThemeCfg.light,
+        bgImage: isDataUrl(toSave.customThemeCfg.light.bgImage) ? 'idb:custom_bg_light' : toSave.customThemeCfg.light.bgImage,
+      },
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...toSave, customThemeCfg: safeCustomCfg }))
+  } catch (e) {
+    console.error('Failed to save settings to localStorage', e)
   }
 }, { deep: true })
 
 export function useSettings() {
   function update(partial: Partial<AppSettings>) {
-    Object.assign(settings, partial)
+    const { capturedPhotos: p, ...configOnly } = partial
+    if (p !== undefined) {
+      capturedPhotos.value = p
+    }
+    Object.assign(configSettings, configOnly)
   }
 
-  function updateCustomTheme(variants: CustomThemeVariants) {
-    Object.assign(settings.customThemeCfg.dark,  variants.dark)
-    Object.assign(settings.customThemeCfg.light, variants.light)
+  async function updateCustomTheme(variants: CustomThemeVariants) {
+    Object.assign(configSettings.customThemeCfg.dark,  variants.dark)
+    Object.assign(configSettings.customThemeCfg.light, variants.light)
+
+    // Persist custom background image to IndexedDB if data URL
+    if (typeof variants.dark.bgImage === 'string' && variants.dark.bgImage.includes('data:')) {
+      await setThemeAsset('custom_bg_dark', variants.dark.bgImage).catch(() => {})
+    } else if (!variants.dark.bgImage || !variants.dark.bgImage.includes('data:')) {
+      await deleteThemeAsset('custom_bg_dark').catch(() => {})
+    }
+
+    if (typeof variants.light.bgImage === 'string' && variants.light.bgImage.includes('data:')) {
+      await setThemeAsset('custom_bg_light', variants.light.bgImage).catch(() => {})
+    } else if (!variants.light.bgImage || !variants.light.bgImage.includes('data:')) {
+      await deleteThemeAsset('custom_bg_light').catch(() => {})
+    }
   }
 
   async function addPhoto(url: string, motion?: boolean, videoBlob?: Blob | null) {
@@ -144,19 +249,18 @@ export function useSettings() {
     const dbData = { url, motion, videoBlob: videoBlob ?? null, createdAt }
     try {
       const id = await addPhotoToDb(dbData)
-      settings.capturedPhotos.push({ id, url, motion, hasVideo: !!videoBlob, createdAt })
+      capturedPhotos.value.push({ id, url, motion, hasVideo: !!videoBlob, createdAt })
     } catch (e) {
       console.error('Failed to save photo to IndexedDB', e)
-      settings.capturedPhotos.push({ url, motion, hasVideo: !!videoBlob, createdAt })
+      capturedPhotos.value.push({ url, motion, hasVideo: !!videoBlob, createdAt })
     }
   }
 
   async function removePhotos(indices: number[]) {
     const toRemove = new Set(indices)
-    // Go backwards to avoid index shift
-    for (let i = settings.capturedPhotos.length - 1; i >= 0; i--) {
+    for (let i = capturedPhotos.value.length - 1; i >= 0; i--) {
       if (toRemove.has(i)) {
-        const photo = settings.capturedPhotos[i]
+        const photo = capturedPhotos.value[i]
         if (photo.id !== undefined) {
           try {
             await deletePhotoFromDb(photo.id)
@@ -164,15 +268,23 @@ export function useSettings() {
             console.error('Failed to delete photo from IndexedDB', e)
           }
         }
-        settings.capturedPhotos.splice(i, 1)
       }
     }
+    capturedPhotos.value = capturedPhotos.value.filter((_, i) => !toRemove.has(i))
   }
 
   function reset() {
-    Object.assign(settings, { ...DEFAULT_SETTINGS, capturedPhotos: settings.capturedPhotos })
-    Object.assign(settings.customThemeCfg.dark,  DEFAULT_SETTINGS.customThemeCfg.dark)
-    Object.assign(settings.customThemeCfg.light, DEFAULT_SETTINGS.customThemeCfg.light)
+    Object.assign(configSettings, {
+      activeThemeKey: DEFAULT_SETTINGS.activeThemeKey,
+      appTitle: DEFAULT_SETTINGS.appTitle,
+      countdownDuration: DEFAULT_SETTINGS.countdownDuration,
+      mirrorPreview: DEFAULT_SETTINGS.mirrorPreview,
+      darkMode: DEFAULT_SETTINGS.darkMode,
+      fontFamily: DEFAULT_SETTINGS.fontFamily,
+      language: DEFAULT_SETTINGS.language,
+    })
+    Object.assign(configSettings.customThemeCfg.dark,  DEFAULT_SETTINGS.customThemeCfg.dark)
+    Object.assign(configSettings.customThemeCfg.light, DEFAULT_SETTINGS.customThemeCfg.light)
   }
 
   return { settings: readonly(settings), update, updateCustomTheme, addPhoto, removePhotos, reset }

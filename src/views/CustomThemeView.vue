@@ -23,6 +23,11 @@ const local = ref<CustomThemeVariants>({
   light: { ...props.cfg.light },
 })
 
+watch(() => props.cfg, (newCfg) => {
+  local.value.dark = { ...newCfg.dark }
+  local.value.light = { ...newCfg.light }
+}, { deep: true })
+
 const cur = computed(() => local.value[editingVariant.value])
 
 const p = computed(() => cur.value.primary)
@@ -30,8 +35,8 @@ const a = computed(() => cur.value.accent)
 const bg = computed(() => cur.value.bg)
 
 function bgModeFromCfg(bgImage: string | null): BgMode {
-  if (!bgImage) return 'solid'
-  if (bgImage.startsWith('url("data:')) return 'phone'
+  if (!bgImage || bgImage.startsWith('idb:')) return 'solid'
+  if (bgImage.includes('data:')) return 'phone'
   if (bgImage.startsWith('url(')) return 'url'
   return 'gradient'
 }
@@ -293,7 +298,7 @@ function onApply() {
         <!-- Camera Roll -->
         <div v-else-if="bgMode === 'phone'" class="phone-section">
           <input ref="fileInput" type="file" accept="image/*" class="hidden-file" @change="handleFile" />
-          <div v-if="cur.bgImage?.startsWith('url(&quot;data:')" class="phone-loaded">
+          <div v-if="cur.bgImage?.includes('data:')" class="phone-loaded">
             <div class="phone-thumb" :style="{ backgroundImage: cur.bgImage }" />
             <div class="phone-actions">
               <button

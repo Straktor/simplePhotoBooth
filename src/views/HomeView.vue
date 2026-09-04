@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -14,12 +17,12 @@ import { RouterLink } from 'vue-router'
         </svg>
       </div>
 
-      <h1 class="title">PhotoBooth</h1>
-      <p class="subtitle">Capture the moment</p>
+      <h1 class="title">{{ t('home.title') }}</h1>
+      <p class="subtitle">{{ t('home.subtitle') }}</p>
     </div>
 
     <RouterLink to="/booth" class="btn-start">
-      Open Booth
+      {{ t('home.start') }}
     </RouterLink>
   </div>
 </template>

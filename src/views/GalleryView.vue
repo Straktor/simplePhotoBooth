@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { ResolvedTheme } from '@/themes'
 import type { PhotoEntry } from '@/composables/useSettings'
 import PhotoViewer from '@/components/PhotoViewer.vue'
+import { exportPhotos } from '@/utils/exportPhoto'
 
 const { t } = useI18n()
 
@@ -45,7 +46,7 @@ function onPointerDown(origIndex: number) {
   }, 400)
 }
 
-function onPointerUp(origIndex: number) {
+function onPointerUp(origIndex: number, displayIndex: number) {
   if (longPressTimer) {
     clearTimeout(longPressTimer)
     longPressTimer = null
@@ -55,8 +56,8 @@ function onPointerUp(origIndex: number) {
   if (selectMode.value) {
     toggleItem(origIndex)
   } else {
-    // Open viewer — find the index in the original (non-reversed) array
-    viewerIndex.value = origIndex
+    // Open viewer matching the display order
+    viewerIndex.value = displayIndex
   }
 }
 
@@ -87,26 +88,8 @@ function toggleAll() {
 
 async function saveSelected() {
   const entries = displayPhotos.value.filter(p => selected.value.has(p.origIndex))
-  const ts = Date.now()
-  const files: File[] = []
-  for (const [i, entry] of entries.entries()) {
-    const blob = await fetch(entry.url).then(r => r.blob())
-    files.push(new File([blob], `photo-${ts}-${i + 1}.jpg`, { type: 'image/jpeg' }))
-  }
-  try {
-    if (navigator.canShare?.({ files })) {
-      await navigator.share({ files })
-    } else throw new Error()
-  } catch {
-    files.forEach((file, i) => {
-      const url = URL.createObjectURL(file)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = file.name
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000 * (i + 1))
-    })
-  }
+  if (entries.length === 0) return
+  await exportPhotos(entries)
 }
 
 function deleteSelected() {
@@ -114,13 +97,13 @@ function deleteSelected() {
   exitSelect()
 }
 
-function handleViewerDelete(origIndex: number) {
-  emit('deletePhotos', [origIndex])
-  // If no photos left, close viewer
+function handleViewerDelete(displayIdx: number) {
+  const item = displayPhotos.value[displayIdx]
+  if (item) {
+    emit('deletePhotos', [item.origIndex])
+  }
   if (props.photos.length <= 1) {
     viewerIndex.value = null
-  } else if (origIndex >= props.photos.length - 1) {
-    viewerIndex.value = props.photos.length - 2
   }
 }
 
@@ -191,12 +174,12 @@ function relativeTime(ts?: number): string {
 
       <div v-else class="grid">
         <div
-          v-for="item in displayPhotos"
+          v-for="(item, displayIndex) in displayPhotos"
           :key="item.origIndex"
           class="thumb"
           :class="{ 'thumb--selected': selectMode && selected.has(item.origIndex) }"
           @pointerdown.prevent="onPointerDown(item.origIndex)"
-          @pointerup="onPointerUp(item.origIndex)"
+          @pointerup="onPointerUp(item.origIndex, displayIndex)"
           @pointerleave="onPointerLeave"
           @contextmenu.prevent
         >
@@ -264,7 +247,7 @@ function relativeTime(ts?: number): string {
     <!-- Full-screen viewer -->
     <PhotoViewer
       v-if="viewerIndex !== null"
-      :photos="photos"
+      :photos="displayPhotos"
       :initial-index="viewerIndex"
       :theme="theme"
       @close="viewerIndex = null"

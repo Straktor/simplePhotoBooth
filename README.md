@@ -1,6 +1,6 @@
 # Simple Photo Booth
 
-A PWA photo booth app built with Vue 3 + TypeScript. Take countdown photos directly from your browser, save them to your device, and install it on your phone like a native app.
+A PWA photo booth app built with Vue 3 + TypeScript. Take countdown photos and motion videos directly from your browser, save them to device, browse your persistent in-app gallery, and customize themes.
 
 **Live:** https://straktor.github.io/simplePhotoBooth/
 
@@ -8,11 +8,13 @@ A PWA photo booth app built with Vue 3 + TypeScript. Take countdown photos direc
 
 ## Features
 
-- **Live camera feed** — front or rear camera, with mirror mode for selfies
-- **Countdown timer** — 3, 5, or 10 seconds, with a full-screen animated overlay
-- **Tap to shoot** — tap the video feed or the shutter button to trigger
-- **Save to device** — captured photos download as JPEG
-- **Themeable** — change primary color, accent color, background color, and background image from Settings
+- **Live camera feed** — front or rear camera, with mirror mode for selfies and camera selection
+- **WYSIWYG 3:4 capture** — view-framed canvas capture matches the on-screen viewfinder
+- **Countdown timer** — 3, 5, or 10 seconds, with an animated overlay (tap to cancel)
+- **Motion Photos & Video Playback** — records synchronized short video clips with playback and Google Motion Photo format support
+- **IndexedDB Photo & Video Gallery** — local persistence with swipe navigation, pinch-to-zoom, playback, batch download, and deletion
+- **Presets & Custom Theme Studio** — Core and Holiday theme presets, with full custom color, gradient, and camera-roll background image support
+- **Internationalization (i18n)** — Full English and French language support
 - **PWA** — installable on iOS and Android, works offline after first load
 - **Auto-deploy** — every push to `main` deploys to GitHub Pages via GitHub Actions
 
@@ -25,12 +27,12 @@ A PWA photo booth app built with Vue 3 + TypeScript. Take countdown photos direc
 | Framework | Vue 3 (Composition API, `<script setup>`) |
 | Language | TypeScript |
 | Build | Vite 8 |
+| Testing | Vitest |
 | PWA | vite-plugin-pwa (Workbox) |
 | Routing | Vue Router 4 (hash history) |
-| State | Module-singleton composable + `localStorage` |
+| Localization | Vue I18n 11 |
+| Storage | IndexedDB (`photobooth-db`) + `localStorage` |
 | Deploy | GitHub Actions → GitHub Pages |
-
-No UI framework, no Pinia — just CSS custom properties and composables.
 
 ---
 
@@ -38,20 +40,32 @@ No UI framework, no Pinia — just CSS custom properties and composables.
 
 ```
 src/
-├── composables/
-│   ├── useCamera.ts       # getUserMedia, canvas capture, download
-│   ├── useCountdown.ts    # Promise-based countdown timer
-│   └── useSettings.ts     # Reactive settings store, persisted to localStorage
 ├── components/
-│   ├── AppLayout.vue      # Root layout, injects CSS variables from settings
-│   ├── BottomNav.vue      # Fixed bottom tab bar (hidden on Booth route)
-│   └── CountdownOverlay.vue
+│   ├── AppLayout.vue          # Root container layout
+│   ├── PhotoViewer.vue        # Full-screen photo viewer with pinch/swipe/video
+│   ├── ThemeDecorations.vue   # Animated SVG holiday & ambient decorations
+│   └── ThemeIcon.vue          # Theme preview icons
+├── composables/
+│   ├── useCamera.ts           # getUserMedia, framed canvas capture, recording
+│   ├── useCountdown.ts        # Promise-based countdown timer
+│   └── useSettings.ts         # Reactive settings store + IndexedDB sync
+├── locales/
+│   ├── en.ts                  # English translations
+│   └── fr.ts                  # French translations
+├── router/
+│   └── index.ts               # Hash history router
+├── utils/
+│   └── db.ts                  # IndexedDB client for photos, videos & custom assets
 ├── views/
-│   ├── HomeView.vue
-│   ├── PhotoBoothView.vue # Full-screen camera + floating controls
-│   └── SettingsView.vue
-├── router/index.ts        # Hash history (required for GitHub Pages)
-└── style.css              # CSS custom property defaults + reset
+│   ├── CustomThemeView.vue    # Theme customizer with live preview
+│   ├── GalleryView.vue        # Photo grid, multi-select, and management
+│   ├── HomeView.vue           # Landing page
+│   ├── PhotoBoothView.vue     # Full-screen camera booth + floating controls
+│   └── SettingsView.vue       # App configuration and theme selector
+├── i18n.ts                    # Vue I18n setup
+├── main.ts                    # App entrypoint
+├── style.css                  # Global resets, keyframe animations, typography
+└── themes.ts                  # Theme preset definitions & dynamic resolution
 ```
 
 ---
@@ -61,6 +75,7 @@ src/
 ```bash
 npm install
 npm run dev       # http://localhost:5173/simplePhotoBooth/
+npm test          # run automated test suite (Vitest)
 npm run build     # type-check + production build → dist/
 ```
 
@@ -72,24 +87,4 @@ npm run build     # type-check + production build → dist/
 
 Deployment is automatic: push to `main` → GitHub Actions builds and deploys.
 
-**First-time setup** (one-off):
-1. Go to the repo → **Settings → Pages**
-2. Set Source to **GitHub Actions**
-
 The workflow lives at [.github/workflows/deploy.yml](.github/workflows/deploy.yml).
-
----
-
-## Settings
-
-All settings are persisted in `localStorage` under the key `photobooth-settings`.
-
-| Setting | Default | Description |
-|---|---|---|
-| Primary color | `#6c63ff` | Accent color for buttons, nav, glow |
-| Accent color | `#ff6584` | Shutter button, countdown highlight |
-| Background color | `#09090f` | App background |
-| Background image | — | Optional image, stored as data URL |
-| Countdown | 3s | Duration before capture (3 / 5 / 10) |
-| Mirror selfie | on | Horizontally flips the front camera preview |
-| Font | System | System / Monospace / Serif |

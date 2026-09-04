@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PhotoEntry } from '@/composables/useSettings'
 import { getPhotoById } from '@/composables/useSettings'
 import type { ResolvedTheme } from '@/themes'
+import { exportPhoto } from '@/utils/exportPhoto'
 
 const { t } = useI18n()
 
@@ -21,6 +22,15 @@ const emit = defineEmits<{
 const currentIndex = ref(props.initialIndex)
 const photo = computed(() => props.photos[currentIndex.value])
 const total = computed(() => props.photos.length)
+
+watch(() => props.photos.length, (newTotal) => {
+  if (newTotal === 0) {
+    cleanupVideo()
+    emit('close')
+  } else if (currentIndex.value >= newTotal) {
+    currentIndex.value = newTotal - 1
+  }
+})
 
 // Video playback
 const videoUrl = ref<string | null>(null)
@@ -112,36 +122,20 @@ function handleClose() {
 function handleDelete() {
   const idx = currentIndex.value
   cleanupVideo()
+  resetZoom()
   emit('delete', idx)
-  if (total.value <= 1) {
-    emit('close')
-  } else if (currentIndex.value >= total.value - 1) {
-    currentIndex.value = total.value - 2
-  }
 }
 
 async function handleShare() {
   const p = photo.value
   if (!p) return
-  try {
-    const blob = await fetch(p.url).then(r => r.blob())
-    const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' })
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file] })
-      return
-    }
-  } catch { /* fall through */ }
-  // Fallback: download
-  handleDownload()
+  await exportPhoto(p)
 }
 
-function handleDownload() {
+async function handleDownload() {
   const p = photo.value
   if (!p) return
-  const a = document.createElement('a')
-  a.href = p.url
-  a.download = `photo-${Date.now()}.jpg`
-  a.click()
+  await exportPhoto(p)
 }
 
 // Touch handlers for swipe + pinch
@@ -235,7 +229,51 @@ function onTouchEnd(_e: TouchEvent) {
   dragDelta.value = 0
 }
 
-// Double-tap to zoom
+// Mouse drag handlers for desktop swipe + pan
+function onMouseDown(e: MouseEvent) {
+  if (isPlayingVideo.value || e.button !== 0) return
+  isDragging.value = true
+  dragStartX.value = e.clientX
+  dragDelta.value = 0
+  lastPanX.value = e.clientX
+  lastPanY.value = e.clientY
+  swipeTransition.value = ''
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function onMouseMove(e: MouseEvent) {
+  if (!isDragging.value) return
+  if (scale.value > 1) {
+    const dx = e.clientX - lastPanX.value
+    const dy = e.clientY - lastPanY.value
+    panX.value += dx
+    panY.value += dy
+    lastPanX.value = e.clientX
+    lastPanY.value = e.clientY
+  } else {
+    dragDelta.value = e.clientX - dragStartX.value
+  }
+}
+
+function onMouseUp(_e: MouseEvent) {
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
+  if (!isDragging.value) return
+  isDragging.value = false
+  if (scale.value > 1) return
+
+  const threshold = 60
+  swipeTransition.value = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)'
+  if (dragDelta.value < -threshold && currentIndex.value < total.value - 1) {
+    handleNext()
+  } else if (dragDelta.value > threshold && currentIndex.value > 0) {
+    handlePrev()
+  }
+  dragDelta.value = 0
+}
+
+// Double-tap / double-click to zoom
 let lastTapTime = 0
 function onDoubleTap(ev: TouchEvent | MouseEvent) {
   const now = Date.now()
@@ -243,14 +281,18 @@ function onDoubleTap(ev: TouchEvent | MouseEvent) {
     if (scale.value > 1) {
       resetZoom()
     } else {
-      scale.value = 2.5
-      // Center zoom on tap position
       const rect = containerRef.value?.getBoundingClientRect()
       if (rect) {
-        const clientX = 'touches' in ev ? (ev as TouchEvent).touches[0]?.clientX ?? rect.left + rect.width / 2 : (ev as MouseEvent).clientX
-        const clientY = 'touches' in ev ? (ev as TouchEvent).touches[0]?.clientY ?? rect.top + rect.height / 2 : (ev as MouseEvent).clientY
-        originX.value = ((clientX - rect.left) / rect.width) * 100
-        originY.value = ((clientY - rect.top) / rect.height) * 100
+        const clientX = 'touches' in ev ? (ev as TouchEvent).touches[0]?.clientX ?? (rect.left + rect.width / 2) : (ev as MouseEvent).clientX
+        const clientY = 'touches' in ev ? (ev as TouchEvent).touches[0]?.clientY ?? (rect.top + rect.height / 2) : (ev as MouseEvent).clientY
+        const centerX = rect.left + rect.width / 2
+        const centerY = rect.top + rect.height / 2
+        const newScale = 2.5
+        scale.value = newScale
+        panX.value = (centerX - clientX) * (newScale - 1)
+        panY.value = (centerY - clientY) * (newScale - 1)
+      } else {
+        scale.value = 2.5
       }
     }
   }
@@ -267,6 +309,8 @@ function onKeyDown(e: KeyboardEvent) {
 onMounted(() => window.addEventListener('keydown', onKeyDown))
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
   cleanupVideo()
 })
 
@@ -315,6 +359,8 @@ const photoTime = computed(() => relativeTime(photo.value?.createdAt))
         @touchstart="onTouchStart"
         @touchmove="onTouchMove"
         @touchend="onTouchEnd"
+        @mousedown="onMouseDown"
+        @dblclick="onDoubleTap"
       >
         <div
           class="viewer-slide"
@@ -328,7 +374,7 @@ const photoTime = computed(() => relativeTime(photo.value?.createdAt))
             class="viewer-img"
             :style="{
               transform: `scale(${scale}) translate(${panX / scale}px, ${panY / scale}px)`,
-              transformOrigin: scale > 1 ? `${originX}% ${originY}%` : 'center center',
+              transformOrigin: 'center center',
               transition: isPinching || isDragging ? 'none' : 'transform 0.25s ease-out',
             }"
             alt=""

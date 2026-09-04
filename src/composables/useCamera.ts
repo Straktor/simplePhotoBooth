@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
+import { i18n } from '@/i18n'
 
 // Inject an XMP APP1 segment immediately after the JPEG SOI marker
 function injectXmp(jpeg: Uint8Array, xmpStr: string): Uint8Array {
@@ -18,12 +19,27 @@ function injectXmp(jpeg: Uint8Array, xmpStr: string): Uint8Array {
   return out
 }
 
+async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  if (typeof blob.arrayBuffer === 'function') {
+    return blob.arrayBuffer()
+  }
+  if (typeof Response !== 'undefined') {
+    return new Response(blob).arrayBuffer()
+  }
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as ArrayBuffer)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsArrayBuffer(blob)
+  })
+}
+
 // Combine a JPEG and an MP4 into a single file that Google Photos
 // recognises as a Motion Photo (MicroVideo v1 format).
 export async function createMotionPhoto(jpegDataUrl: string, mp4Blob: Blob): Promise<Blob> {
   const [jpegBuf, videoBuf] = await Promise.all([
     fetch(jpegDataUrl).then(r => r.arrayBuffer()),
-    mp4Blob.arrayBuffer(),
+    blobToArrayBuffer(mp4Blob),
   ])
   const jpeg  = new Uint8Array(jpegBuf)
   const video = new Uint8Array(videoBuf)
@@ -83,20 +99,30 @@ function getCandidateMimeTypes(stream: MediaStream): string[] {
   return []
 }
 
+const supportedMimeCache = new Map<string, string>()
+
 function getSupportedVideoMime(stream: MediaStream | null): string {
   if (typeof MediaRecorder === 'undefined' || !stream) return ''
+  const hasAudio = stream.getAudioTracks().length > 0
+  const hasVideo = stream.getVideoTracks().length > 0
+  const key = `${hasVideo}-${hasAudio}`
+
+  if (supportedMimeCache.has(key)) {
+    return supportedMimeCache.get(key)!
+  }
+
   const types = getCandidateMimeTypes(stream)
   for (const mime of types) {
     try {
       if (MediaRecorder.isTypeSupported(mime)) {
-        // Test instantiation to verify the browser can actually encode this format
-        new MediaRecorder(stream, { mimeType: mime })
+        supportedMimeCache.set(key, mime)
         return mime
       }
-    } catch (e) {
-      console.warn(`MIME type ${mime} is supported according to isTypeSupported but failed to instantiate MediaRecorder:`, e)
+    } catch {
+      // ignore
     }
   }
+  supportedMimeCache.set(key, '')
   return ''
 }
 export function useCamera(
@@ -130,7 +156,7 @@ export function useCamera(
     stopCamera()
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      error.value = 'Camera not supported on this device or requires HTTPS.'
+      error.value = i18n.global.t('booth.errors.unsupported')
       return
     }
 
@@ -173,11 +199,11 @@ export function useCamera(
       await enumerateDevices()
     } catch (err) {
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
-        error.value = 'Camera permission denied. Please allow camera access and try again.'
+        error.value = i18n.global.t('booth.errors.denied')
       } else if (err instanceof DOMException && err.name === 'NotFoundError') {
-        error.value = 'No camera found on this device.'
+        error.value = i18n.global.t('booth.errors.notFound')
       } else {
-        error.value = 'Could not access camera.'
+        error.value = i18n.global.t('booth.errors.generic')
       }
     }
   }
@@ -200,17 +226,45 @@ export function useCamera(
     await startCamera()
   }
 
-  function capturePhoto(format: 'jpeg' | 'png', quality: number, mirror: boolean): string {
+  function capturePhoto(
+    format: 'jpeg' | 'png' = 'jpeg',
+    quality = 0.92,
+    mirror = false,
+    targetAspect: number | null = 3 / 4,
+  ): string {
     const video = videoRef.value!
     const canvas = canvasRef.value!
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    const videoW = video.videoWidth || 1920
+    const videoH = video.videoHeight || 1080
+
+    let cropX = 0
+    let cropY = 0
+    let cropW = videoW
+    let cropH = videoH
+
+    if (targetAspect && targetAspect > 0) {
+      const currentAspect = videoW / videoH
+      if (currentAspect > targetAspect) {
+        cropH = videoH
+        cropW = Math.round(videoH * targetAspect)
+        cropX = Math.round((videoW - cropW) / 2)
+        cropY = 0
+      } else {
+        cropW = videoW
+        cropH = Math.round(videoW / targetAspect)
+        cropX = 0
+        cropY = Math.round((videoH - cropH) / 2)
+      }
+    }
+
+    canvas.width = cropW
+    canvas.height = cropH
     const ctx = canvas.getContext('2d')!
     if (mirror) {
       ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)
     }
-    ctx.drawImage(video, 0, 0)
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH)
     const dataUrl = canvas.toDataURL(`image/${format}`, quality)
     lastPhoto.value = dataUrl
     return dataUrl
@@ -254,7 +308,7 @@ export function useCamera(
       const options = mime ? { mimeType: mime } : undefined
       const rec = new MediaRecorder(stream.value, options)
       rec.ondataavailable = (e) => { if (e.data.size > 0) recordingChunks.push(e.data) }
-      rec.start()
+      rec.start(250)
       mediaRecorder.value = rec
     } catch (err) {
       console.error('Failed to start MediaRecorder:', err)
@@ -273,7 +327,7 @@ export function useCamera(
           resolved = true
           resolve(null)
         }
-      }, 1500)
+      }, 2500)
 
       rec.onstop = () => {
         if (resolved) return
@@ -284,7 +338,10 @@ export function useCamera(
         mediaRecorder.value = null
         resolve(blob)
       }
-      try { rec.stop() } catch { 
+      try {
+        try { rec.requestData() } catch { /* ignore */ }
+        rec.stop()
+      } catch { 
         if (!resolved) {
           resolved = true
           clearTimeout(timeout)

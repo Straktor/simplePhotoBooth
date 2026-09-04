@@ -1,4 +1,9 @@
 export default {
+  home: {
+    title: 'PhotoBooth',
+    subtitle: 'Capture the moment',
+    start: 'Open Booth',
+  },
   settings: {
     title: 'Settings',
     back: 'Back',
@@ -25,6 +30,7 @@ export default {
     resetDefaults: 'Reset to defaults',
   },
   booth: {
+    defaultTitle: 'Simple Photo Booth',
     startCamera: 'Start Camera',
     retry: 'Retry',
     tapToCancel: 'tap to cancel',
@@ -32,6 +38,14 @@ export default {
     saveMotionPhoto: 'Save Motion Photo',
     savePhotoVideo: 'Save Photo & Video',
     saved: '✓ Saved',
+    rec: 'REC',
+    playback: 'PLAYBACK',
+    errors: {
+      unsupported: 'Camera not supported on this device or requires HTTPS.',
+      denied: 'Camera permission denied. Please allow camera access and try again.',
+      notFound: 'No camera found on this device.',
+      generic: 'Could not access camera.',
+    },
   },
   gallery: {
     title: 'Gallery',

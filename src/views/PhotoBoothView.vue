@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCamera } from '@/composables/useCamera'
 import { useCountdown } from '@/composables/useCountdown'
@@ -70,7 +70,64 @@ const fsBtnStyle = computed(() => theme.value.darkFrame
   : { background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.75)' }
 )
 
-onMounted(() => startCamera())
+let wakeLock: any = null
+
+async function requestWakeLock() {
+  if ('wakeLock' in navigator && !wakeLock) {
+    try {
+      wakeLock = await (navigator as any).wakeLock.request('screen')
+      wakeLock.addEventListener?.('release', () => {
+        wakeLock = null
+      })
+    } catch {
+      // ignore
+    }
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    try { wakeLock.release() } catch {}
+    wakeLock = null
+  }
+}
+
+async function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+      }
+      isFullscreen.value = true
+    } catch {
+      isFullscreen.value = !isFullscreen.value
+    }
+  } else {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen()
+      }
+      isFullscreen.value = false
+    } catch {
+      isFullscreen.value = false
+    }
+  }
+}
+
+function onFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
+onMounted(() => {
+  startCamera()
+  requestWakeLock()
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
+  releaseWakeLock()
+})
 
 async function handleShoot() {
   if (isRunning.value) return
@@ -99,7 +156,7 @@ async function handleShoot() {
   }
 
   flash.value = true
-  const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value)
+  const dataUrl = capturePhoto('jpeg', 0.92, settings.mirrorPreview && isFront.value, isFullscreen.value ? null : 3 / 4)
   previewDataUrl.value = dataUrl
   setTimeout(() => { flash.value = false }, 400)
 
@@ -240,7 +297,7 @@ const galleryTheme = computed(() => theme.value)
         <span
           class="app-title"
           :style="{ backgroundImage: theme.titleGradient }"
-        >{{ settings.appTitle || 'Simple Photo Booth' }}</span>
+        >{{ settings.appTitle || t('booth.defaultTitle') }}</span>
       </div>
       <div class="topbar-actions">
         <!-- dark/light toggle -->
@@ -351,7 +408,7 @@ const galleryTheme = computed(() => theme.value)
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-right: 2px;">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          PLAYBACK
+          {{ t('booth.playback') }}
         </div>
 
         <!-- Start camera overlay -->
@@ -382,7 +439,7 @@ const galleryTheme = computed(() => theme.value)
               <path d="m6 2 3 3-3 3"/>
             </svg>
           </button>
-          <button class="fs-btn" :style="fsBtnStyle" @click="isFullscreen = !isFullscreen">
+          <button class="fs-btn" :style="fsBtnStyle" @click="toggleFullscreen">
             <svg v-if="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
               <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
@@ -409,7 +466,7 @@ const galleryTheme = computed(() => theme.value)
         <!-- REC indicator -->
         <div v-if="isRecording" class="rec-indicator">
           <div class="rec-dot" />
-          REC
+          {{ t('booth.rec') }}
         </div>
 
         <!-- Preview (auto-dismisses, no button) -->
@@ -504,7 +561,7 @@ const galleryTheme = computed(() => theme.value)
             <path d="m6 2 3 3-3 3"/>
           </svg>
         </button>
-        <button class="fs-btn" style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)" @click="isFullscreen = false">
+        <button class="fs-btn" style="background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.16);color:rgba(255,255,255,0.88)" @click="toggleFullscreen">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
             <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>

@@ -209,27 +209,42 @@ export const GRADIENTS = [
   { label:'Dusk',     value:'linear-gradient(160deg,#1a0a2a,#3a1a4a 50%,#ff8c44)' },
 ]
 
+export function isColorLight(hex: string): boolean {
+  const c = hex.replace('#', '')
+  if (c.length !== 6 && c.length !== 3) return false
+  const fullHex = c.length === 3 ? c.split('').map(x => x + x).join('') : c
+  const r = parseInt(fullHex.slice(0, 2), 16)
+  const g = parseInt(fullHex.slice(2, 4), 16)
+  const b = parseInt(fullHex.slice(4, 6), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128
+}
+
 export function resolveTheme(activeKey: string, customCfg: CustomThemeVariants, darkMode: boolean, fontOverride?: string): ResolvedTheme {
   if (activeKey === 'custom') {
     const { primary, accent, bg, bgImage } = darkMode ? customCfg.dark : customCfg.light
+    const isLight = !darkMode || isColorLight(bg)
     return {
-      ...PRESETS.neon.dark,
+      label: 'Custom',
+      group: 'Core',
+      emoji: '🎨',
       bg, primary, accent,
-      text: '#f0f0f0',
-      textMuted: 'rgba(240,240,240,0.4)',
-      border: primary + '30',
-      borderStrong: primary + '55',
-      surface: 'rgba(0,0,0,0.5)',
-      surfaceSolid: bg,
-      shutterGlow: `0 0 28px ${accent}88`,
+      text: isLight ? '#1a1a1a' : '#f0f0f0',
+      textMuted: isLight ? 'rgba(26,26,26,0.45)' : 'rgba(240,240,240,0.4)',
+      border: primary + (isLight ? '22' : '30'),
+      borderStrong: primary + (isLight ? '45' : '55'),
+      surface: isLight ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.5)',
+      surfaceSolid: isLight ? '#ffffff' : bg,
+      shutterGlow: isLight ? `0 4px 22px ${accent}66` : `0 0 28px ${accent}88`,
+      font: fontOverride ?? '"SF Pro Display",system-ui,sans-serif',
       countdownColor: accent,
-      viewfinderBorder: primary + '55',
+      viewfinderBorder: primary + (isLight ? '35' : '55'),
+      glassBlur: 'blur(18px)',
       titleGradient: `linear-gradient(135deg,${primary},${accent})`,
       cameraBlobs: [primary + '40', accent + '40', primary + '30', accent + '35', primary + '25'],
       cameraBg: bg,
       bgImage,
       scanlines: false,
-      darkFrame: true,
+      darkFrame: !isLight,
       ...(fontOverride ? { font: fontOverride } : {}),
     }
   }

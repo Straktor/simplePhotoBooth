@@ -1,4 +1,9 @@
 export default {
+  home: {
+    title: 'PhotoBooth',
+    subtitle: 'Capturez le moment',
+    start: 'Ouvrir la cabine',
+  },
   settings: {
     title: 'Paramètres',
     back: 'Retour',
@@ -25,6 +30,7 @@ export default {
     resetDefaults: 'Réinitialiser',
   },
   booth: {
+    defaultTitle: 'Simple Photo Booth',
     startCamera: 'Démarrer la caméra',
     retry: 'Réessayer',
     tapToCancel: 'appuyer pour annuler',
@@ -32,6 +38,14 @@ export default {
     saveMotionPhoto: 'Enregistrer en photo animée',
     savePhotoVideo: 'Enregistrer photo & vidéo',
     saved: '✓ Enregistré',
+    rec: 'REC',
+    playback: 'LECTURE',
+    errors: {
+      unsupported: 'Caméra non prise en charge sur cet appareil ou requiert HTTPS.',
+      denied: 'Autorisation de caméra refusée. Veuillez autoriser l\'accès et réessayer.',
+      notFound: 'Aucune caméra trouvée sur cet appareil.',
+      generic: 'Impossible d\'accéder à la caméra.',
+    },
   },
   gallery: {
     title: 'Galerie',
