@@ -22,7 +22,7 @@ export interface GooglePhotosState {
 const STORAGE_KEY = 'photobooth-google-photos-v1'
 
 const defaultState: GooglePhotosState = {
-  clientId: '',
+  clientId: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '',
   accessToken: null,
   tokenExpiresAt: null,
   selectedAlbumId: null,
@@ -33,11 +33,20 @@ const defaultState: GooglePhotosState = {
 }
 
 function loadState(): GooglePhotosState {
+  const envId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || ''
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState }
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return {
+        ...defaultState,
+        ...parsed,
+        clientId: parsed.clientId || envId,
+      }
+    }
+    return { ...defaultState, clientId: envId }
   } catch {
-    return { ...defaultState }
+    return { ...defaultState, clientId: envId }
   }
 }
 

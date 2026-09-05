@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { ResolvedTheme } from '@/themes'
 import type { PhotoEntry } from '@/composables/useSettings'
 import { useGooglePhotos } from '@/composables/useGooglePhotos'
+import { preparePhotoFiles, shareOrDownloadFiles } from '@/utils/exportPhoto'
 
 const { t } = useI18n()
 
@@ -30,11 +31,13 @@ const {
   backupAllPhotos,
 } = useGooglePhotos()
 
+const showDevSetup = ref(false)
 const showHelp = ref(false)
 const isConnecting = ref(false)
 const newAlbumTitle = ref('')
 const isCreatingAlbum = ref(false)
 const syncSuccess = ref<string | null>(null)
+const isSharingToApp = ref(false)
 
 onMounted(() => {
   if (isConnected.value) {
@@ -69,6 +72,21 @@ async function handleSyncAll() {
   const result = await backupAllPhotos([...props.photos])
   if (result.uploaded > 0) {
     syncSuccess.value = `${result.uploaded} photo(s) backed up successfully!`
+  }
+}
+
+async function handleSendToApp() {
+  if (props.photos.length === 0 || isSharingToApp.value) return
+  isSharingToApp.value = true
+  try {
+    const allFiles: File[] = []
+    for (const photo of props.photos) {
+      const files = await preparePhotoFiles(photo)
+      allFiles.push(...files)
+    }
+    await shareOrDownloadFiles(allFiles)
+  } finally {
+    isSharingToApp.value = false
   }
 }
 </script>
@@ -120,47 +138,78 @@ async function handleSyncAll() {
         </div>
       </div>
 
-      <!-- Connection Section -->
-      <div class="section-label" :style="{ color: theme.textMuted }">{{ t('googlePhotos.account') }}</div>
+      <!-- OPTION 1: Installed Device App (Zero Setup) -->
+      <div class="section-label" :style="{ color: theme.textMuted }">{{ t('googlePhotos.nativeAppTitle') }}</div>
+      <div class="group" :style="{ background: theme.surface, border: `1px solid ${theme.border}` }">
+        <div class="row row--col" style="gap: 8px;">
+          <p style="margin: 0; font-size: 13px; line-height: 1.45;" :style="{ color: theme.textMuted }">
+            {{ t('googlePhotos.nativeAppDesc') }}
+          </p>
+        </div>
+        <div class="divider" :style="{ background: theme.border }" />
+        <div class="row row--center">
+          <button
+            class="sync-btn"
+            :style="{ background: theme.accent, color: '#fff' }"
+            :disabled="photos.length === 0 || isSharingToApp"
+            @click="handleSendToApp"
+          >
+            <span v-if="isSharingToApp">...</span>
+            <span v-else>{{ t('googlePhotos.sendToApp', { count: photos.length }) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- OPTION 2: Direct Cloud Connection -->
+      <div class="section-label" :style="{ color: theme.textMuted }">{{ t('googlePhotos.cloudApiTitle') }}</div>
       <div class="group" :style="{ background: theme.surface, border: `1px solid ${theme.border}` }">
         <template v-if="!isConnected">
-          <div class="row row--col">
-            <label class="input-label">{{ t('googlePhotos.clientIdLabel') }}</label>
-            <input
-              class="text-input"
-              :value="state.clientId"
-              :placeholder="t('googlePhotos.clientIdPlaceholder')"
-              :style="{ color: theme.text, borderColor: theme.border, background: 'rgba(0,0,0,0.1)' }"
-              @input="updateConfig({ clientId: ($event.target as HTMLInputElement).value })"
-            />
+          <!-- When Client ID is already configured (e.g. from VITE_GOOGLE_CLIENT_ID or previously entered) -->
+          <div v-if="state.clientId" class="row row--center">
+            <button
+              class="connect-btn"
+              :style="{ background: theme.accent, boxShadow: theme.shutterGlow }"
+              :disabled="isConnecting"
+              @click="handleConnect"
+            >
+              <span v-if="isConnecting">{{ t('googlePhotos.connecting') }}</span>
+              <span v-else>{{ t('googlePhotos.connectGoogle') }}</span>
+            </button>
           </div>
 
+          <div v-else class="row row--col" style="gap: 10px;">
+            <p style="margin: 0; font-size: 13px; line-height: 1.45;" :style="{ color: theme.textMuted }">
+              {{ t('googlePhotos.noClientIdNotice') }}
+            </p>
+          </div>
+
+          <!-- Developer / Custom Client ID collapsible -->
+          <div class="divider" :style="{ background: theme.border }" />
           <div class="row row--help">
-            <button class="help-btn" :style="{ color: theme.primary }" @click="showHelp = !showHelp">
-              {{ showHelp ? t('googlePhotos.hideHelp') : t('googlePhotos.showHelp') }}
+            <button class="help-btn" :style="{ color: theme.primary }" @click="showDevSetup = !showDevSetup">
+              {{ showDevSetup ? t('googlePhotos.hideDevSetup') : t('googlePhotos.showDevSetup') }}
             </button>
-            <div v-if="showHelp" class="help-content" :style="{ color: theme.textMuted }">
-              <ol>
+            <div v-if="showDevSetup" class="help-content" :style="{ color: theme.textMuted, width: '100%', marginTop: '8px' }">
+              <div class="row row--col" style="padding: 0 0 8px;">
+                <label class="input-label">{{ t('googlePhotos.clientIdLabel') }}</label>
+                <input
+                  class="text-input"
+                  :value="state.clientId"
+                  :placeholder="t('googlePhotos.clientIdPlaceholder')"
+                  :style="{ color: theme.text, borderColor: theme.border, background: 'rgba(0,0,0,0.1)' }"
+                  @input="updateConfig({ clientId: ($event.target as HTMLInputElement).value })"
+                />
+              </div>
+              <button class="help-btn" :style="{ color: theme.primary, padding: '4px 0' }" @click="showHelp = !showHelp">
+                {{ showHelp ? t('googlePhotos.hideHelp') : t('googlePhotos.showHelp') }}
+              </button>
+              <ol v-if="showHelp" style="margin: 6px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.5;">
                 <li>{{ t('googlePhotos.helpStep1') }}</li>
                 <li>{{ t('googlePhotos.helpStep2') }}</li>
                 <li>{{ t('googlePhotos.helpStep3') }}</li>
                 <li>{{ t('googlePhotos.helpStep4') }}</li>
               </ol>
             </div>
-          </div>
-
-          <div class="divider" :style="{ background: theme.border }" />
-
-          <div class="row row--center">
-            <button
-              class="connect-btn"
-              :style="{ background: theme.accent, boxShadow: theme.shutterGlow }"
-              :disabled="isConnecting || !state.clientId"
-              @click="handleConnect"
-            >
-              <span v-if="isConnecting">{{ t('googlePhotos.connecting') }}</span>
-              <span v-else>{{ t('googlePhotos.connectGoogle') }}</span>
-            </button>
           </div>
         </template>
 
