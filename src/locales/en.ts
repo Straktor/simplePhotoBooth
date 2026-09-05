@@ -3,6 +3,8 @@ export default {
     title: 'PhotoBooth',
     subtitle: 'Capture the moment',
     start: 'Open Booth',
+    settings: 'Settings',
+    gallery: 'Gallery',
   },
   settings: {
     title: 'Settings',

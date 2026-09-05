@@ -3,6 +3,8 @@ export default {
     title: 'PhotoBooth',
     subtitle: 'Capturez le moment',
     start: 'Ouvrir la cabine',
+    settings: 'Paramètres',
+    gallery: 'Galerie',
   },
   settings: {
     title: 'Paramètres',
