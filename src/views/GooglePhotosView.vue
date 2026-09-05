@@ -5,6 +5,7 @@ import type { ResolvedTheme } from '@/themes'
 import type { PhotoEntry } from '@/composables/useSettings'
 import { useGooglePhotos } from '@/composables/useGooglePhotos'
 import { preparePhotoFiles, shareOrDownloadFiles } from '@/utils/exportPhoto'
+import GooglePhotosLogo from '@/components/GooglePhotosLogo.vue'
 
 const { t } = useI18n()
 
@@ -107,13 +108,7 @@ async function handleSendToApp() {
       <!-- Hero / Explanation Card -->
       <div class="hero-card" :style="{ background: theme.surface, border: `1px solid ${theme.border}` }">
         <div class="hero-icon-wrap">
-          <!-- Google Photos Pinwheel SVG -->
-          <svg width="40" height="40" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 12c0-6.6-5.4-12-12-12S0 5.4 0 12h24z"/>
-            <path fill="#4285F4" d="M36 24c6.6 0 12-5.4 12-12s-5.4-12-12-12v24z"/>
-            <path fill="#34A853" d="M24 36c0 6.6 5.4 12 12 12s12-5.4 12-12H24z"/>
-            <path fill="#FBBC05" d="M12 24c-6.6 0-12 5.4-12 12s5.4 12 12 12V24z"/>
-          </svg>
+          <GooglePhotosLogo :size="48" />
         </div>
         <h2 class="hero-title">{{ t('googlePhotos.heroTitle') }}</h2>
         <p class="hero-desc" :style="{ color: theme.textMuted }">
@@ -237,42 +232,44 @@ async function handleSendToApp() {
             </select>
           </div>
         </div>
+      </template>
 
-        <!-- Automation Settings -->
-        <div class="section-label" :style="{ color: theme.textMuted }">{{ t('googlePhotos.backupOptions') }}</div>
-        <div class="group" :style="{ background: theme.surface, border: `1px solid ${theme.border}` }">
-          <div class="row">
-            <div class="option-text">
-              <span class="row-label">{{ t('googlePhotos.autoBackup') }}</span>
-              <span class="option-desc" :style="{ color: theme.textMuted }">{{ t('googlePhotos.autoBackupDesc') }}</span>
-            </div>
-            <div
-              class="toggle"
-              :style="{ background: state.autoBackup ? theme.accent : 'rgba(120,120,128,0.3)' }"
-              @click="updateConfig({ autoBackup: !state.autoBackup })"
-            >
-              <div class="toggle-knob" :style="{ transform: state.autoBackup ? 'translateX(20px)' : 'translateX(0)' }" />
-            </div>
+      <!-- Automation Settings -->
+      <div class="section-label" :style="{ color: theme.textMuted }">{{ t('googlePhotos.backupOptions') }}</div>
+      <div class="group" :style="{ background: theme.surface, border: `1px solid ${theme.border}` }">
+        <div class="row">
+          <div class="option-text">
+            <span class="row-label">{{ t('googlePhotos.autoBackup') }}</span>
+            <span class="option-desc" :style="{ color: theme.textMuted }">{{ t('googlePhotos.autoBackupDesc') }}</span>
           </div>
-
-          <div class="divider" :style="{ background: theme.border }" />
-
-          <div class="row">
-            <div class="option-text">
-              <span class="row-label">{{ t('googlePhotos.freeUpSpace') }}</span>
-              <span class="option-desc" :style="{ color: theme.textMuted }">{{ t('googlePhotos.freeUpSpaceDesc') }}</span>
-            </div>
-            <div
-              class="toggle"
-              :style="{ background: state.purgeLocalAfterUpload ? theme.accent : 'rgba(120,120,128,0.3)' }"
-              @click="updateConfig({ purgeLocalAfterUpload: !state.purgeLocalAfterUpload })"
-            >
-              <div class="toggle-knob" :style="{ transform: state.purgeLocalAfterUpload ? 'translateX(20px)' : 'translateX(0)' }" />
-            </div>
+          <div
+            class="toggle"
+            :style="{ background: state.autoBackup ? theme.accent : 'rgba(120,120,128,0.3)' }"
+            @click="updateConfig({ autoBackup: !state.autoBackup })"
+          >
+            <div class="toggle-knob" :style="{ transform: state.autoBackup ? 'translateX(20px)' : 'translateX(0)' }" />
           </div>
         </div>
 
-        <!-- Manual Backup Button -->
+        <div class="divider" :style="{ background: theme.border }" />
+
+        <div class="row">
+          <div class="option-text">
+            <span class="row-label">{{ t('googlePhotos.freeUpSpace') }}</span>
+            <span class="option-desc" :style="{ color: theme.textMuted }">{{ t('googlePhotos.freeUpSpaceDesc') }}</span>
+          </div>
+          <div
+            class="toggle"
+            :style="{ background: state.purgeLocalAfterUpload ? theme.accent : 'rgba(120,120,128,0.3)' }"
+            @click="updateConfig({ purgeLocalAfterUpload: !state.purgeLocalAfterUpload })"
+          >
+            <div class="toggle-knob" :style="{ transform: state.purgeLocalAfterUpload ? 'translateX(20px)' : 'translateX(0)' }" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual Backup Button (When Cloud Connected) -->
+      <template v-if="isConnected">
         <div class="section-label" :style="{ color: theme.textMuted }">{{ t('googlePhotos.manualSync') }}</div>
         <div class="group" :style="{ background: theme.surface, border: `1px solid ${theme.border}` }">
           <div class="row row--sync">

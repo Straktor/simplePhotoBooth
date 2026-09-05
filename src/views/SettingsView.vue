@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { PRESETS, FONTS, resolveTheme } from '@/themes'
 import type { CustomThemeVariants } from '@/themes'
 import ThemeIcon from '@/components/ThemeIcon.vue'
+import GooglePhotosLogo from '@/components/GooglePhotosLogo.vue'
 import { useGooglePhotos } from '@/composables/useGooglePhotos'
 
 const { t } = useI18n()
@@ -287,12 +288,7 @@ const LANGUAGES = [
       <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
         <div class="row row--clickable" @click="emit('openGooglePhotos')">
           <div class="gp-info">
-            <svg width="22" height="22" viewBox="0 0 48 48">
-              <path fill="#EA4335" d="M24 12c0-6.6-5.4-12-12-12S0 5.4 0 12h24z"/>
-              <path fill="#4285F4" d="M36 24c6.6 0 12-5.4 12-12s-5.4-12-12-12v24z"/>
-              <path fill="#34A853" d="M24 36c0 6.6 5.4 12 12 12s12-5.4 12-12H24z"/>
-              <path fill="#FBBC05" d="M12 24c-6.6 0-12 5.4-12 12s5.4 12 12 12V24z"/>
-            </svg>
+            <GooglePhotosLogo :size="24" />
             <div class="gp-text">
               <span class="row-label">{{ t('settings.googlePhotos') }}</span>
               <span class="gp-status" :style="{ color: t2.textMuted }">

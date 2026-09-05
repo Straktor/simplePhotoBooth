@@ -2,9 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import 'fake-indexeddb/auto'
 import {
   addPhotoToDb,
+  addPhotoToDbWithRetry,
   getAllPhotos,
   getPhotoById,
   deletePhotoFromDb,
+  deleteOldestPhotos,
   clearAllPhotosFromDb,
   setThemeAsset,
   getThemeAsset,
@@ -53,5 +55,25 @@ describe('IndexedDB operations (db.ts)', () => {
     await deleteThemeAsset('custom_bg_dark')
     const deleted = await getThemeAsset('custom_bg_dark')
     expect(deleted).toBeNull()
+  })
+
+  it('deletes oldest photos from db when requested', async () => {
+    await addPhotoToDb({ url: 'photo1', createdAt: 1000 })
+    await addPhotoToDb({ url: 'photo2', createdAt: 2000 })
+    await addPhotoToDb({ url: 'photo3', createdAt: 3000 })
+
+    const deletedCount = await deleteOldestPhotos(2)
+    expect(deletedCount).toBe(2)
+
+    const remaining = await getAllPhotos()
+    expect(remaining.length).toBe(1)
+    expect(remaining[0].url).toBe('photo3')
+  })
+
+  it('adds photo with retry support', async () => {
+    const id = await addPhotoToDbWithRetry({ url: 'photo_retry', createdAt: 4000 })
+    expect(typeof id).toBe('number')
+    const retrieved = await getPhotoById(id)
+    expect(retrieved?.url).toBe('photo_retry')
   })
 })

@@ -66,6 +66,41 @@ export async function addPhotoToDb(photo: Omit<DbPhoto, 'id'>): Promise<number> 
   })
 }
 
+export async function deleteOldestPhotos(count = 1): Promise<number> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readwrite')
+    const store = transaction.objectStore(STORE_NAME)
+    const request = store.openCursor()
+    let deleted = 0
+
+    request.onsuccess = (event: any) => {
+      const cursor = event.target.result
+      if (cursor && deleted < count) {
+        cursor.delete()
+        deleted++
+        cursor.continue()
+      } else {
+        resolve(deleted)
+      }
+    }
+    request.onerror = () => reject(request.error)
+  })
+}
+
+export async function addPhotoToDbWithRetry(photo: Omit<DbPhoto, 'id'>, retries = 2): Promise<number> {
+  try {
+    return await addPhotoToDb(photo)
+  } catch (err: any) {
+    if (retries > 0) {
+      console.warn('Storage quota warning when adding photo, pruning oldest from DB...', err)
+      await deleteOldestPhotos(2).catch(() => {})
+      return addPhotoToDbWithRetry(photo, retries - 1)
+    }
+    throw err
+  }
+}
+
 export async function deletePhotoFromDb(id: number): Promise<void> {
   const db = await openDb()
   return new Promise((resolve, reject) => {

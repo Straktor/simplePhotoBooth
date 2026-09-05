@@ -1,7 +1,7 @@
 import { reactive, readonly, ref, watch } from 'vue'
 import type { CustomThemeVariants } from '@/themes'
 import { i18n } from '@/i18n'
-import { getAllPhotos, addPhotoToDb, deletePhotoFromDb, getPhotoById, getThemeAsset, setThemeAsset, deleteThemeAsset } from '@/utils/db'
+import { getAllPhotos, addPhotoToDb, addPhotoToDbWithRetry, deletePhotoFromDb, getPhotoById, getThemeAsset, setThemeAsset, deleteThemeAsset } from '@/utils/db'
 
 export interface PhotoEntry {
   id?: number
@@ -244,11 +244,27 @@ export function useSettings() {
     }
   }
 
-  async function addPhoto(url: string, motion?: boolean, videoBlob?: Blob | null) {
+  async function pruneOldestPhotos(keepCount = 15) {
+    if (capturedPhotos.value.length <= keepCount) return
+    const countToDelete = capturedPhotos.value.length - keepCount
+    const indices = Array.from({ length: countToDelete }, (_, i) => i)
+    await removePhotos(indices)
+  }
+
+  async function addPhoto(
+    url: string,
+    motion?: boolean,
+    videoBlob?: Blob | null,
+    options?: { maxLocalPhotos?: number },
+  ) {
+    if (options?.maxLocalPhotos && capturedPhotos.value.length >= options.maxLocalPhotos) {
+      await pruneOldestPhotos(Math.max(0, options.maxLocalPhotos - 1))
+    }
+
     const createdAt = Date.now()
     const dbData = { url, motion, videoBlob: videoBlob ?? null, createdAt }
     try {
-      const id = await addPhotoToDb(dbData)
+      const id = await addPhotoToDbWithRetry(dbData)
       capturedPhotos.value.push({ id, url, motion, hasVideo: !!videoBlob, createdAt })
     } catch (e) {
       console.error('Failed to save photo to IndexedDB', e)
@@ -287,5 +303,5 @@ export function useSettings() {
     Object.assign(configSettings.customThemeCfg.light, DEFAULT_SETTINGS.customThemeCfg.light)
   }
 
-  return { settings: readonly(settings), update, updateCustomTheme, addPhoto, removePhotos, reset }
+  return { settings: readonly(settings), update, updateCustomTheme, addPhoto, removePhotos, pruneOldestPhotos, reset }
 }

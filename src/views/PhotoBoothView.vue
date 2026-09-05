@@ -166,9 +166,15 @@ async function handleShoot() {
   setTimeout(async () => {
     const videoBlob = await stopRecording()
     isRecording.value = false
-    addPhoto(dataUrl, !!videoBlob, videoBlob)
-    autoSave(dataUrl, videoBlob)
 
+    // When Google Photos sync is active, limit local app storage to keep recent buffer (15 photos) so app never runs out of space
+    const maxLocalPhotos = gpState.autoBackup ? 15 : undefined
+    await addPhoto(dataUrl, !!videoBlob, videoBlob, { maxLocalPhotos })
+
+    // Auto-save to local device / Google Photos app
+    await autoSave(dataUrl, videoBlob)
+
+    // And if connected to cloud, back up to cloud album
     if (isGpConnected.value && gpState.autoBackup) {
       backupPhoto({ url: dataUrl, motion: !!videoBlob, hasVideo: !!videoBlob, createdAt: Date.now() }).catch(() => {})
     }

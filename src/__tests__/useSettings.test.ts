@@ -39,4 +39,23 @@ describe('useSettings', () => {
     await removePhotos([settings.capturedPhotos.length - 1])
     expect(settings.capturedPhotos.length).toBe(initialCount)
   })
+
+  it('prunes oldest photos and respects maxLocalPhotos', async () => {
+    const { settings, addPhoto, pruneOldestPhotos } = useSettings()
+    await addPhoto('photo_a')
+    await addPhoto('photo_b')
+    await addPhoto('photo_c')
+    await addPhoto('photo_d')
+
+    await pruneOldestPhotos(2)
+    expect(settings.capturedPhotos.length).toBe(2)
+    expect(settings.capturedPhotos[0].url).toBe('photo_c')
+    expect(settings.capturedPhotos[1].url).toBe('photo_d')
+
+    // Adding with maxLocalPhotos: 2 should prune before adding new
+    await addPhoto('photo_e', false, null, { maxLocalPhotos: 2 })
+    expect(settings.capturedPhotos.length).toBe(2)
+    expect(settings.capturedPhotos[0].url).toBe('photo_d')
+    expect(settings.capturedPhotos[1].url).toBe('photo_e')
+  })
 })
