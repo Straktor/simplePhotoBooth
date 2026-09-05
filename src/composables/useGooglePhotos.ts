@@ -111,7 +111,7 @@ export function useGooglePhotos() {
   async function connect(): Promise<void> {
     lastError.value = null
     if (!state.clientId.trim()) {
-      lastError.value = 'Please provide a Google Client ID.'
+      lastError.value = 'Google Photos sign-in is not configured.'
       throw new Error(lastError.value)
     }
 
