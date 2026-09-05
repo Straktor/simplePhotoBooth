@@ -9,8 +9,9 @@ import ThemeDecorations from '@/components/ThemeDecorations.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import CustomThemeView from '@/views/CustomThemeView.vue'
 import GalleryView from '@/views/GalleryView.vue'
+import GooglePhotosView from '@/views/GooglePhotosView.vue'
 
-type Screen = 'home' | 'settings' | 'customTheme' | 'gallery'
+type Screen = 'home' | 'settings' | 'customTheme' | 'gallery' | 'googlePhotos'
 
 const { t } = useI18n()
 const { settings, update, updateCustomTheme, removePhotos, reset } = useSettings()
@@ -85,6 +86,7 @@ function handleApplyCustom() {
     @back="screen = 'home'"
     @select-theme="handleSelectTheme"
     @edit-custom="screen = 'customTheme'"
+    @open-google-photos="screen = 'googlePhotos'"
     @update-title="(v) => update({ appTitle: v })"
     @update-countdown="(v) => update({ countdownDuration: v })"
     @update-mirror="(v) => update({ mirrorPreview: v })"
@@ -101,6 +103,13 @@ function handleApplyCustom() {
     @update="handleUpdateCustom"
     @back="screen = 'settings'"
     @apply="handleApplyCustom"
+  />
+
+  <GooglePhotosView
+    v-else-if="screen === 'googlePhotos'"
+    :theme="theme"
+    :photos="settings.capturedPhotos"
+    @back="screen = 'settings'"
   />
 
   <GalleryView

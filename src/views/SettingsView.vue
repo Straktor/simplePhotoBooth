@@ -4,8 +4,10 @@ import { useI18n } from 'vue-i18n'
 import { PRESETS, FONTS, resolveTheme } from '@/themes'
 import type { CustomThemeVariants } from '@/themes'
 import ThemeIcon from '@/components/ThemeIcon.vue'
+import { useGooglePhotos } from '@/composables/useGooglePhotos'
 
 const { t } = useI18n()
+const { isConnected: isGpConnected, state: gpState } = useGooglePhotos()
 
 const props = defineProps<{
   activeKey: string
@@ -24,6 +26,7 @@ const emit = defineEmits<{
   back: []
   selectTheme: [key: string]
   editCustom: []
+  openGooglePhotos: []
   updateTitle: [title: string]
   updateCountdown: [dur: number]
   updateMirror: [val: boolean]
@@ -279,6 +282,33 @@ const LANGUAGES = [
         </div>
       </div>
 
+      <!-- CLOUD BACKUP -->
+      <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.cloudBackup') }}</div>
+      <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
+        <div class="row row--clickable" @click="emit('openGooglePhotos')">
+          <div class="gp-info">
+            <svg width="22" height="22" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 12c0-6.6-5.4-12-12-12S0 5.4 0 12h24z"/>
+              <path fill="#4285F4" d="M36 24c6.6 0 12-5.4 12-12s-5.4-12-12-12v24z"/>
+              <path fill="#34A853" d="M24 36c0 6.6 5.4 12 12 12s12-5.4 12-12H24z"/>
+              <path fill="#FBBC05" d="M12 24c-6.6 0-12 5.4-12 12s5.4 12 12 12V24z"/>
+            </svg>
+            <div class="gp-text">
+              <span class="row-label">{{ t('settings.googlePhotos') }}</span>
+              <span class="gp-status" :style="{ color: t2.textMuted }">
+                {{ isGpConnected ? (gpState.selectedAlbumTitle || t('settings.connectedNoAlbum')) : t('settings.notConnected') }}
+              </span>
+            </div>
+          </div>
+          <div class="row-right">
+            <span v-if="isGpConnected" class="status-badge" :style="{ background: t2.accent }">✓</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="{ color: t2.textMuted }">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
       <!-- RESET -->
       <div class="section-label" :style="{ color: t2.textMuted }">{{ t('settings.dangerZone') }}</div>
       <div class="group" :style="{ background: t2.surface, border: `1px solid ${t2.border}` }">
@@ -418,6 +448,49 @@ const LANGUAGES = [
   line-height: 1.4;
   margin: 0;
   text-align: left;
+}
+
+.row--clickable {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.row--clickable:active {
+  opacity: 0.7;
+}
+
+.gp-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gp-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gp-status {
+  font-size: 11px;
+}
+
+.row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  font-size: 10px;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
 /* ── Segmented control ── */
